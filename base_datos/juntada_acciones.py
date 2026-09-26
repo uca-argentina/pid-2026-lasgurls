@@ -4,6 +4,7 @@ from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.categoria_tabla import CategoriaTabla
+from base_datos.comentario_tabla import ComentarioTabla
 from dominio.modulo_utilidades.rango_horario import ya_empezo
 
 
@@ -118,6 +119,7 @@ def _borrar_si_todos_rechazaron(sesion, juntada_id):
 
 
 def _borrar_juntada(sesion, juntada_id):
+    sesion.execute(delete(ComentarioTabla).where(ComentarioTabla.juntadaID==juntada_id))
     sesion.execute(delete(JuntadaInvitadosTabla).where(JuntadaInvitadosTabla.juntada_id == juntada_id))
     sesion.execute(delete(JuntadaTabla).where(JuntadaTabla.id == juntada_id))
 

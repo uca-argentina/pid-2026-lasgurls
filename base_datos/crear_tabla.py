@@ -5,6 +5,7 @@ from base_datos.categoria_tabla import CategoriaTabla
 from base_datos.solicitud_tabla import SolicitudTabla
 from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
+from base_datos.comentario_tabla import ComentarioTabla
 
 Base.metadata.create_all(engine)
 print("tablas creadas!")
