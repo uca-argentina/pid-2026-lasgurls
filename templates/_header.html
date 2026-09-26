@@ -1,0 +1,38 @@
+<header class="header">
+  <div class="header-contenido">
+    <a href="{{ url_for('mostrar_calendario') }}" class="header-marca" aria-label="JuntApp, ir al calendario">
+      {% include "_logo.html" %}
+    </a>
+
+    <nav class="header-nav">
+      {% for endpoint, texto in [("mostrar_calendario", "Calendario"), ("mostrar_amistad", "Amistades")] %}
+      <a href="{{ url_for(endpoint) }}" class="header-link{% if request.endpoint == endpoint %} header-link-activo{% endif %}">
+        {{ texto }}
+        {% if request.endpoint == endpoint %}<span class="header-subrayado"></span>{% endif %}
+      </a>
+      {% endfor %}
+    </nav>
+
+    <div class="header-acciones">
+      <div data-notificaciones="{{ url_for('mostrar_notificaciones') }}">
+        {% include "_notificaciones.html" %}
+      </div>
+
+      <details class="desplegable">
+        <summary class="boton-avatar" aria-label="Menú de usuario">
+          <span class="avatar">{{ usuario_actual.nombre|iniciales }}</span>
+        </summary>
+        <div class="panel panel-usuario">
+          <div class="panel-usuario-info">
+            <strong>{{ usuario_actual.nombre }}</strong>
+            <span>{{ usuario_actual.email }}</span>
+          </div>
+          <a href="{{ url_for('mostrar_perfil') }}" class="panel-opcion">Mi perfil</a>
+          <form method="POST" action="{{ url_for('logout') }}">
+            <button type="submit" class="panel-opcion">Cerrar sesión</button>
+          </form>
+        </div>
+      </details>
+    </div>
+  </div>
+</header>

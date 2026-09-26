@@ -40,28 +40,43 @@ def actualizarEstado(solicitudID,usuarioID,nuevoEstado):
 
         return resultado.rowcount==1
     
+def eliminarAmistad(usuarioID,amigoID):
+    with Session() as sesion:
+        consulta=(
+            update(SolicitudTabla)
+            .where(
+                SolicitudTabla.estado=="Aceptada",
+                ((SolicitudTabla.emisorID==usuarioID) & (SolicitudTabla.receptorID==amigoID)) |
+                ((SolicitudTabla.emisorID==amigoID) & (SolicitudTabla.receptorID==usuarioID))
+            )
+            .values(estado="Eliminada")
+        )
+
+        resultado=sesion.execute(consulta)
+        sesion.commit()
+
+        return resultado.rowcount>=1
+
 def obtenerRecibidas(usuarioID):
     with Session() as sesion:
-        consulta=select(SolicitudTabla).join(UsuarioTabla,UsuarioTabla.id==SolicitudTabla.emisorID).where(
+        consulta=select(SolicitudTabla,UsuarioTabla).join(UsuarioTabla,UsuarioTabla.id==SolicitudTabla.emisorID).where(
             UsuarioTabla.activo.is_(True),
             SolicitudTabla.receptorID==usuarioID,
             SolicitudTabla.estado=="Pendiente"
         )
-        return sesion.scalars(consulta).all()
+        return sesion.execute(consulta).all()
 
-def obtener_amigos_de_usuario(usuarioID):
+def obtener_amigos(usuarioID):
     with Session() as sesion:
-        consulta=select(SolicitudTabla).join(UsuarioTabla,UsuarioTabla.id==case(
+        consulta=select(UsuarioTabla).join(SolicitudTabla,UsuarioTabla.id==case(
             (SolicitudTabla.emisorID==usuarioID,SolicitudTabla.receptorID),
             else_=SolicitudTabla.emisorID
         )).where(
             UsuarioTabla.activo.is_(True),
             SolicitudTabla.estado=="Aceptada",
             (SolicitudTabla.emisorID==usuarioID) | (SolicitudTabla.receptorID==usuarioID)
-        )
-        solicitudes=sesion.scalars(consulta).all()
+        ).order_by(UsuarioTabla.nombre)
+        return sesion.scalars(consulta).all()
 
-    return [
-        solicitud.receptorID if solicitud.emisorID==usuarioID else solicitud.emisorID
-        for solicitud in solicitudes
-    ]
+def obtener_amigos_de_usuario(usuarioID):
+    return [amigo.id for amigo in obtener_amigos(usuarioID)]

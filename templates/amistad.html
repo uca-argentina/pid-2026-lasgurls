@@ -1,119 +1,119 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JuntApp — Amistades</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='registro.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="pagina">
-  <div class="marca">JuntApp</div>
+{% block titulo %}Amistades{% endblock %}
 
-  <div class="tarjeta-formulario tarjeta-ancha">
-    <div class="encabezado-tarjeta">
-      <h2>Mis amistades</h2>
-      <nav class="nav-principal">
-        <a href="{{ url_for('mostrar_nueva_juntada') }}" class="boton-nav">Nueva juntada</a>
-        <a href="{{ url_for('mostrar_calendario') }}" class="boton-nav">Calendario</a>
-        <a href="{{ url_for('mostrar_perfil') }}" class="boton-nav">Mi perfil</a>
-        <form method="POST" action="{{ url_for('logout') }}">
-          <button type="submit" class="boton-nav">Cerrar sesión</button>
-        </form>
-      </nav>
-    </div>
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Mis amistades</h2>
+    <nav class="nav-principal">
+      <a href="{{ url_for('mostrar_nueva_juntada') }}" class="boton-principal">Nueva juntada</a>
+    </nav>
+  </div>
 
-    <div data-recargable>
-      <form method="GET" action="{{ url_for('mostrar_amistad') }}" class="buscador">
-        <div class="campo campo-buscador">
-          <label for="nombre">Buscar personas</label>
-          <div class="autocompletar">
-            <input id="nombre" name="nombre" type="search" placeholder="Nombre" value="{{ nombre }}" autocomplete="off">
-            <ul class="sugerencias" id="sugerencias" hidden>
-              {% for persona in sugerencias %}
-              <li data-nombre="{{ persona.nombre }}">
-                <span class="fila-nombre">{{ persona.nombre }}</span>
-                <span class="fila-detalle">{{ persona.email }}</span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-        <button type="submit" class="boton-secundario">Buscar</button>
-      </form>
-
-      {% if nombre %}
-      <div class="seccion">
-        <h3 class="titulo-seccion">Resultados</h3>
-        <ul class="lista">
-          {% for persona in personas %}
-          <li class="fila">
-            <div class="fila-info">
+  <div data-recargable>
+    <form method="GET" action="{{ url_for('mostrar_amistad') }}" class="buscador">
+      <div class="campo campo-buscador">
+        <label for="nombre">Buscar personas</label>
+        <div class="autocompletar">
+          <input id="nombre" name="nombre" type="search" placeholder="Nombre" value="{{ nombre }}" autocomplete="off">
+          <ul class="sugerencias" id="sugerencias" hidden>
+            {% for persona in sugerencias %}
+            <li data-nombre="{{ persona.nombre }}">
               <span class="fila-nombre">{{ persona.nombre }}</span>
               <span class="fila-detalle">{{ persona.email }}</span>
-            </div>
-            {% if persona.id in amigos_ids %}
-            <a href="{{ url_for('mostrar_nueva_juntada', invitado=persona.id) }}" class="boton-secundario">Crear juntada</a>
-            {% elif persona.id != session["usuarioID"] %}
-            <form method="POST" action="{{ url_for('enviar_solicitud', receptorID=persona.id) }}">
-              <button type="submit" class="boton-secundario">Enviar solicitud</button>
-            </form>
-            {% endif %}
-          </li>
-          {% else %}
-          <li class="fila fila-vacia">No se encontraron personas</li>
-          {% endfor %}
-        </ul>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
       </div>
-      {% endif %}
+      <button type="submit" class="boton-secundario">Buscar</button>
+    </form>
 
-      <div class="seccion">
-        <h3 class="titulo-seccion">Solicitudes recibidas</h3>
-        <ul class="lista">
-          {% for item in recibidas %}
-          <li class="fila">
-            <div class="fila-info">
-              <span class="fila-nombre">{{ item.emisor.nombre }}</span>
-              <span class="fila-detalle">{{ item.emisor.email }}</span>
-            </div>
-            <div class="fila-acciones">
-              <form method="POST" action="{{ url_for('aceptar_solicitud', solicitudID=item.solicitud.id) }}">
-                <button type="submit" class="boton-secundario">Aceptar</button>
-              </form>
-              <form method="POST" action="{{ url_for('rechazar_solicitud', solicitudID=item.solicitud.id) }}">
-                <button type="submit" class="boton-texto">Rechazar</button>
-              </form>
-            </div>
-          </li>
-          {% else %}
-          <li class="fila fila-vacia">No tenés solicitudes pendientes</li>
-          {% endfor %}
-        </ul>
-      </div>
-      <div class="seccion">
-        <h3 class="titulo-seccion">Mis amigos</h3>
-        <ul class="lista">
-          {% for amigo in amigos %}
-          <li class="fila">
-            <div class="fila-info">
-              <span class="fila-nombre">{{ amigo.nombre }}</span>
-              <span class="fila-detalle">{{ amigo.email }}</span>
-            </div>
+    {% if nombre %}
+    <div class="seccion">
+      <h3 class="titulo-seccion">Resultados</h3>
+      <ul class="lista">
+        {% for persona in personas %}
+        <li class="fila">
+          <div class="fila-info">
+            <span class="fila-nombre">{{ persona.nombre }}</span>
+            <span class="fila-detalle">{{ persona.email }}</span>
+          </div>
+          {% if persona.id in amigos_ids %}
+          <a href="{{ url_for('mostrar_nueva_juntada', invitado=persona.id) }}" class="boton-secundario">Crear juntada</a>
+          {% elif persona.id != session["usuarioID"] %}
+          <form method="POST" action="{{ url_for('enviar_solicitud', receptorID=persona.id) }}">
+            <button type="submit" class="boton-secundario">Enviar solicitud</button>
+          </form>
+          {% endif %}
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">No se encontraron personas</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="seccion">
+      <h3 class="titulo-seccion">Solicitudes recibidas</h3>
+      <ul class="lista">
+        {% for item in recibidas %}
+        <li class="fila">
+          <div class="fila-info">
+            <span class="fila-nombre">{{ item.emisor.nombre }}</span>
+            <span class="fila-detalle">{{ item.emisor.email }}</span>
+          </div>
+          <div class="fila-acciones">
+            <form method="POST" action="{{ url_for('aceptar_solicitud', solicitudID=item.solicitud.id) }}">
+              <button type="submit" class="boton-principal">Aceptar</button>
+            </form>
+            <form method="POST" action="{{ url_for('rechazar_solicitud', solicitudID=item.solicitud.id) }}">
+              <button type="submit" class="boton-neutro boton-rechazar">Rechazar</button>
+            </form>
+          </div>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">No tenés solicitudes pendientes</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="seccion">
+      <h3 class="titulo-seccion">Mis amigos</h3>
+      <ul class="lista">
+        {% for amigo in amigos %}
+        <li class="fila">
+          <div class="fila-info">
+            <span class="fila-nombre">{{ amigo.nombre }}</span>
+            <span class="fila-detalle">{{ amigo.email }}</span>
+          </div>
+          <div class="fila-acciones">
             <a href="{{ url_for('mostrar_nueva_juntada', invitado=amigo.id) }}" class="boton-secundario">Crear juntada</a>
-          </li>
-          {% else %}
-          <li class="fila fila-vacia">Todavía no tenés amigos agregados</li>
-          {% endfor %}
-        </ul>
-      </div>
+            <button type="button" class="boton-neutro boton-rechazar" data-abrir-dialogo="eliminar-{{ amigo.id }}">Eliminar</button>
+          </div>
+          <dialog class="dialogo" id="eliminar-{{ amigo.id }}">
+            <h3>¿Eliminar a {{ amigo.nombre }} de tus amigos?</h3>
+            <p>Ya no van a poder invitarse a juntadas ni ver la disponibilidad del otro. Si cambian de idea, pueden volver a mandarse una solicitud.</p>
+            <div class="dialogo-acciones">
+              <form method="dialog">
+                <button class="boton-neutro">Cancelar</button>
+              </form>
+              <form method="POST" action="{{ url_for('eliminar_amigo', amigoID=amigo.id) }}">
+                <button type="submit" class="boton-peligro">Eliminar</button>
+              </form>
+            </div>
+          </dialog>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">Todavía no tenés amigos agregados</li>
+        {% endfor %}
+      </ul>
     </div>
   </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script src="{{ url_for('static', filename='navegacion.js') }}" defer></script>
 <script src="{{ url_for('static', filename='amistad.js') }}" defer></script>
-</body>
-</html>
+{% endblock %}

@@ -1,0 +1,17 @@
+<div class="campo">
+  <span class="etiqueta">Categoría</span>
+  <div class="categorias" data-categorias>
+    <label class="categoria-opcion">
+      <input type="radio" name="categoria" value=""{% if not request.form.get('categoria') %} checked{% endif %}>
+      <span class="categoria-chip"><i class="categoria-sin-color"></i>Sin categoría</span>
+    </label>
+    {% for categoria in categorias %}
+    <label class="categoria-opcion">
+      <input type="radio" name="categoria" value="{{ categoria.id }}"{% if request.form.get('categoria') == categoria.id|string %} checked{% endif %}>
+      <span class="categoria-chip"><i style="background: {{ categoria.color }}"></i>{{ categoria.nombre }}</span>
+    </label>
+    {% endfor %}
+    <button type="button" class="categoria-agregar" data-abrir-nueva-categoria>+ Nueva</button>
+  </div>
+  {% with al_crear="elegir" %}{% include "_nueva_categoria.html" %}{% endwith %}
+</div>

@@ -1,76 +1,57 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JuntApp — Nueva juntada</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='registro.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="pagina">
-  <div class="marca">JuntApp</div>
+{% block titulo %}Nueva juntada{% endblock %}
 
-  <div class="tarjeta-formulario tarjeta-ancha">
-    <div class="encabezado-tarjeta">
-      <h2>Nueva juntada</h2>
-      <div class="encabezado-acciones">
-        <a href="{{ url_for('mostrar_calendario') }}" class="boton-texto">Cancelar</a>
-      </div>
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Nueva juntada</h2>
+    <div class="encabezado-acciones">
+      <a href="{{ url_for('mostrar_calendario') }}" class="boton-texto">Cancelar</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <p class="mensaje-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('crear_juntada') }}" data-formulario-con-disponibilidad="juntada">
+    <div class="campo">
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" name="titulo" placeholder="¿Qué van a hacer?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título a la juntada.">
     </div>
 
-    {% if error %}
-    <p class="mensaje-error">{{ error }}</p>
-    {% endif %}
+    {% include "_elegir_categoria.html" %}
 
-    <form method="POST" action="{{ url_for('crear_juntada') }}">
-      <div class="campo">
-        <label for="titulo">Título</label>
-        <input type="text" id="titulo" name="titulo" placeholder="¿Qué van a hacer?" required>
-      </div>
+    <div class="seccion seccion-formulario">
+      <h3 class="titulo-seccion">¿Con quién?</h3>
+      <ul class="lista" data-requiere-uno="Elegí al menos un amigo para invitar.">
+        {% for amigo in amigos %}
+        <li class="fila">
+          <label class="fila-seleccionable">
+            <input type="checkbox" name="invitados" value="{{ amigo.id }}" data-nombre="{{ amigo.nombre }}" data-iniciales="{{ amigo.nombre|iniciales }}"{% if amigo.id in seleccionados %} checked{% endif %}>
+            <span class="avatar avatar-chico">{{ amigo.nombre|iniciales }}</span>
+            <span class="fila-info">
+              <span class="fila-nombre">{{ amigo.nombre }}</span>
+              <span class="fila-detalle">{{ amigo.email }}</span>
+            </span>
+          </label>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">Todavía no tenés amigos para invitar. Agregalos desde&nbsp;<a href="{{ url_for('mostrar_amistad') }}">Amistades</a>.</li>
+        {% endfor %}
+      </ul>
+    </div>
 
-      <div class="campo">
-        <label for="fecha">Fecha</label>
-        <input type="date" id="fecha" name="fecha" value="{{ fecha_sugerida }}" required>
-      </div>
+    {% include "_horario_con_disponibilidad.html" %}
 
-      <div class="fila-horarios">
-        <div class="campo">
-          <label for="hora_inicio">Desde</label>
-          <input type="time" id="hora_inicio" name="hora_inicio" required>
-        </div>
-        <div class="campo">
-          <label for="hora_fin">Hasta</label>
-          <input type="time" id="hora_fin" name="hora_fin" required>
-        </div>
-      </div>
-
-      <div class="seccion">
-        <h3 class="titulo-seccion">Invitar amigos</h3>
-        <ul class="lista">
-          {% for amigo in amigos %}
-          <li class="fila">
-            <label class="fila-seleccionable">
-              <input type="checkbox" name="invitados" value="{{ amigo.id }}"{% if amigo.id in seleccionados %} checked{% endif %}>
-              <span class="fila-info">
-                <span class="fila-nombre">{{ amigo.nombre }}</span>
-                <span class="fila-detalle">{{ amigo.email }}</span>
-              </span>
-            </label>
-            <a href="{{ url_for('mostrar_disponibilidad', amigo_id=amigo.id, fecha=fecha_sugerida) }}" class="boton-texto">Ver disponibilidad</a>
-          </li>
-          {% else %}
-          <li class="fila fila-vacia">Todavía no tenés amigos para invitar</li>
-          {% endfor %}
-        </ul>
-      </div>
-
-      <button type="submit" class="boton-enviar">Crear juntada</button>
-    </form>
-  </div>
+    <button type="submit" class="boton-enviar">Crear juntada</button>
+  </form>
 </div>
+{% endblock %}
 
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='grilla_semanal.js') }}" defer></script>
+<script src="{{ url_for('static', filename='disponibilidad.js') }}" defer></script>
+<script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
+{% endblock %}

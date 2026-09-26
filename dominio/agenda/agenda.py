@@ -1,17 +1,19 @@
+from datetime import datetime
 from dominio.modulo_utilidades.parseo_hora_fecha import parsear_fecha, parsear_hora
 from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEvento
 
 
 class Agenda:
-    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin):
+    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin, ahora=None, categoria_id=None):
         self.usuario_id = usuario_id
+        self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
         self.hora_inicio = parsear_hora(hora_inicio, "hora de inicio")
-        self.hora_fin = parsear_hora(hora_fin, "hora de finalizacion")
+        self.hora_fin = parsear_hora(hora_fin, "hora de finalización")
         self.titulo_reunion = titulo_reunion
 
-
         self.validar_agenda()
+        ValidadorDetipoEvento().validar_que_no_empiece_en_el_pasado(self.fecha, self.hora_inicio, ahora or datetime.now(), "El evento")
 
     def validar_agenda(self):
         ValidadorDetipoEvento().validar(

@@ -141,3 +141,42 @@ def test_recibidas_solo_incluye_solicitudes_del_usuario():
     assert gestor.solicitudesRecibidas(2)==[paraUsuario2]
     assert gestor.solicitudesRecibidas(3)==[paraUsuario3]
     assert gestor.solicitudesRecibidas(1)==[]
+
+def test_eliminar_amistad():
+    gestor=GestorAmistades()
+    solicitud=gestor.enviarSolicitud(1,2)
+    solicitud.aceptar(2)
+
+    solicitud.eliminar(1)
+
+    assert solicitud.estado=="Eliminada"
+    assert not gestor.sonAmigos(1,2)
+
+def test_despues_de_eliminar_pueden_volver_a_ser_amigos():
+    gestor=GestorAmistades()
+    solicitud=gestor.enviarSolicitud(1,2)
+    solicitud.aceptar(2)
+    solicitud.eliminar(2)
+
+    nueva=gestor.enviarSolicitud(2,1)
+
+    assert nueva is not None
+    assert nueva.estado=="Pendiente"
+
+def test_no_se_elimina_una_solicitud_pendiente():
+    gestor=GestorAmistades()
+    solicitud=gestor.enviarSolicitud(1,2)
+
+    solicitud.eliminar(1)
+
+    assert solicitud.estado=="Pendiente"
+
+def test_un_tercero_no_puede_eliminar_la_amistad():
+    gestor=GestorAmistades()
+    solicitud=gestor.enviarSolicitud(1,2)
+    solicitud.aceptar(2)
+
+    solicitud.eliminar(3)
+
+    assert solicitud.estado=="Aceptada"
+    assert gestor.sonAmigos(1,2)

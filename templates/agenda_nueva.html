@@ -1,56 +1,37 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JuntApp — Nuevo evento</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{{ url_for('static', filename='registro.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="pagina">
-  <div class="marca">JuntApp</div>
+{% block titulo %}Nuevo evento{% endblock %}
 
-  <div class="tarjeta-formulario tarjeta-ancha">
-    <div class="encabezado-tarjeta">
-      <h2>Nuevo evento</h2>
-      <div class="encabezado-acciones">
-        <a href="{{ url_for('mostrar_calendario') }}" class="boton-texto">Cancelar</a>
-      </div>
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Nuevo evento</h2>
+    <div class="encabezado-acciones">
+      <a href="{{ url_for('mostrar_calendario') }}" class="boton-texto">Cancelar</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <p class="mensaje-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('crear_agenda') }}" data-formulario-con-disponibilidad="evento">
+    <div class="campo">
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" name="titulo" placeholder="¿Qué tenés que hacer?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título al evento.">
     </div>
 
-    {% if error %}
-    <p class="mensaje-error">{{ error }}</p>
-    {% endif %}
+    {% include "_elegir_categoria.html" %}
 
-    <form method="POST" action="{{ url_for('crear_agenda') }}">
-      <div class="campo">
-        <label for="titulo">Título</label>
-        <input type="text" id="titulo" name="titulo" placeholder="¿Qué tenés que hacer?" required>
-      </div>
+    {% include "_horario_con_disponibilidad.html" %}
 
-      <div class="campo">
-        <label for="fecha">Fecha</label>
-        <input type="date" id="fecha" name="fecha" value="{{ fecha_sugerida }}" required>
-      </div>
-
-      <div class="fila-horarios">
-        <div class="campo">
-          <label for="hora_inicio">Desde</label>
-          <input type="time" id="hora_inicio" name="hora_inicio" required>
-        </div>
-        <div class="campo">
-          <label for="hora_fin">Hasta</label>
-          <input type="time" id="hora_fin" name="hora_fin" required>
-        </div>
-      </div>
-
-      <button type="submit" class="boton-enviar">Guardar evento</button>
-    </form>
-  </div>
+    <button type="submit" class="boton-enviar">Guardar evento</button>
+  </form>
 </div>
+{% endblock %}
 
-</body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='grilla_semanal.js') }}" defer></script>
+<script src="{{ url_for('static', filename='disponibilidad.js') }}" defer></script>
+<script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
+{% endblock %}

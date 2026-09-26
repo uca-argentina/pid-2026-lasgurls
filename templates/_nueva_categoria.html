@@ -1,0 +1,16 @@
+<div class="nueva-categoria" data-nueva-categoria data-url="{{ url_for('crear_categoria_propia') }}" data-al-crear="{{ al_crear }}" hidden>
+  <input type="text" maxlength="30" placeholder="Nombre, por ejemplo: Gimnasio" aria-label="Nombre de la categoría" data-nombre-categoria>
+  <div class="paleta" role="radiogroup" aria-label="Color">
+    {% for color, nombre_color in colores.items() %}
+    <label title="{{ nombre_color }}">
+      <input type="radio" name="color_nueva_categoria" value="{{ color }}"{% if loop.first %} checked{% endif %}>
+      <span style="background: {{ color }}"></span>
+    </label>
+    {% endfor %}
+  </div>
+  <p class="campo-error" data-error-categoria hidden></p>
+  <div class="nueva-categoria-acciones">
+    <button type="button" class="boton-neutro boton-chico" data-cancelar-categoria>Cancelar</button>
+    <button type="button" class="boton-principal boton-chico" data-guardar-categoria>Crear categoría</button>
+  </div>
+</div>

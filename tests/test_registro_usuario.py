@@ -19,13 +19,13 @@ def test_password_se_guarda_hasheada_no_en_texto_plano():
 def test_nombre_vacio_lanza_error():
     with pytest.raises(ValueError) as error:
         Usuario("test@gmail.com", "Contra123!!", "")
-    assert str(error.value) == "El nombre no debe estar vacio"
+    assert str(error.value) == "El nombre no debe estar vacío"
 
 
 def test_nombre_solo_espacios_lanza_error():
     with pytest.raises(ValueError) as error:
         Usuario("test@gmail.com", "Contra123!!", "   ")
-    assert str(error.value) == "El nombre no debe estar vacio"
+    assert str(error.value) == "El nombre no debe estar vacío"
 
 
 
@@ -56,19 +56,19 @@ def test_email_con_espacio_lanza_error():
 def test_email_sin_dominio_lanza_error():
     with pytest.raises(ValueError) as error:
         Usuario("test@", "Contra123!!", "Test")
-    assert str(error.value) == "El email no es valido"
+    assert str(error.value) == "El email no es válido"
 
 
 def test_email_sin_usuario_lanza_error():
     with pytest.raises(ValueError) as error:
         Usuario("@gmail.com", "Contra123!!", "Test")
-    assert str(error.value) == "El email no es valido"
+    assert str(error.value) == "El email no es válido"
 
 
 def test_email_sin_punto_en_dominio_lanza_error():
     with pytest.raises(ValueError) as error:
         Usuario("test@gmailcom", "Contra123!!", "Test")
-    assert str(error.value) == "El email debe tener un dominio valido como '.com' "
+    assert str(error.value) == "El email debe tener un dominio válido como '.com' "
 
 def test_email_se_normaliza_a_minusculas():
     usuario = Usuario("Test@Gmail.com", "Contra123!!", "Test")

@@ -15,6 +15,11 @@ class Solicitud:
         if self.puedeResponder(usuarioID):
             self.estado="Rechazada"
 
+    def eliminar(self,usuarioID):
+        esParte=usuarioID in (self.emisorID,self.receptorID)
+        if esParte and self.estado=="Aceptada":
+            self.estado="Eliminada"
+
     
     def esEntre(self,primerID,segundoID):
         mismoSentido=self.emisorID==primerID and self.receptorID==segundoID

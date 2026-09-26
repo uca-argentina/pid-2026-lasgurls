@@ -1,55 +1,64 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>JuntApp — Mi perfil</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="{{ url_for('static', filename='registro.css') }}">
-</head>
-<body>
-  <div class="pagina">
-    <div class="marca">JuntApp</div>
-    <div class="tarjeta-formulario tarjeta-ancha">
-      <div class="encabezado-tarjeta">
-        <h2>Mi perfil</h2>
-        <nav class="nav-principal">
-          <a href="{{ url_for('mostrar_calendario') }}" class="boton-nav">Calendario</a>
-          <a href="{{ url_for('mostrar_amistad') }}" class="boton-nav">Amistades</a>
-          <form method="POST" action="{{ url_for('logout') }}">
-            <button type="submit" class="boton-nav">Cerrar sesión</button>
-          </form>
-        </nav>
-      </div>
-      {% if error %}
-      <p class="mensaje-error" role="alert">{{ error }}</p>
-      {% endif %}
-      {% if guardado %}
-      <p role="status">Guardamos tus cambios.</p>
-      {% endif %}
-      <form method="POST" action="{{ url_for('mostrar_perfil') }}">
-        <input type="hidden" name="token" value="{{ session['perfil_token'] }}">
-        <div class="campo">
-          <label for="nombre">Nombre</label>
-          <input id="nombre" name="nombre" value="{{ nombre }}" autocomplete="name" maxlength="255" required>
-        </div>
-        <button type="submit" class="boton-enviar">Guardar cambios</button>
-      </form>
-      <div class="seccion">
-        <h3 class="titulo-seccion">Dar de baja mi cuenta</h3>
-        <p>Tu cuenta se desactivará y dejarás de aparecer en las búsquedas. Se conservarán tus registros de amistad y juntadas.</p>
-        <form method="POST" action="{{ url_for('baja_cuenta') }}">
-          <input type="hidden" name="token" value="{{ session['perfil_token'] }}">
-          <div class="campo">
-            <label for="password-baja">Contraseña actual</label>
-            <input id="password-baja" name="password" type="password" autocomplete="current-password" required>
-          </div>
-          <label><input type="checkbox" name="confirmar" value="si" required> Quiero dar de baja mi cuenta</label>
-          <button type="submit" class="boton-enviar">Dar de baja mi cuenta</button>
-        </form>
-      </div>
-    </div>
+{% extends "base.html" %}
+
+{% block titulo %}Mi perfil{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Mi perfil</h2>
   </div>
-</body>
-</html>
+  {% if error %}
+  <p class="mensaje-error" role="alert">{{ error }}</p>
+  {% endif %}
+  {% if guardado %}
+  <p role="status">Guardamos tus cambios.</p>
+  {% endif %}
+  <form method="POST" action="{{ url_for('mostrar_perfil') }}">
+    <input type="hidden" name="token" value="{{ session['perfil_token'] }}">
+    <div class="campo">
+      <label for="nombre">Nombre</label>
+      <input id="nombre" name="nombre" value="{{ nombre }}" autocomplete="name" maxlength="255" required data-mensaje="Escribí tu nombre.">
+    </div>
+    <button type="submit" class="boton-enviar">Guardar cambios</button>
+  </form>
+  <div class="seccion">
+    <h3 class="titulo-seccion">Categorías</h3>
+    <p class="subtitulo-seccion">Para ordenar tus eventos. Tus amigos no las ven.</p>
+    <ul class="lista">
+      {% for categoria in categorias %}
+      <li class="fila">
+        <span class="categoria-chip"><i style="background: {{ categoria.color }}"></i>{{ categoria.nombre }}</span>
+        {% if categoria.usuario_id %}
+        <form method="POST" action="{{ url_for('borrar_categoria_propia', categoria_id=categoria.id) }}">
+          <button type="submit" class="boton-neutro boton-rechazar boton-chico">Borrar</button>
+        </form>
+        {% else %}
+        <span class="fila-detalle">Viene con JuntApp</span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    <div class="categorias categorias-perfil">
+      <button type="button" class="categoria-agregar" data-abrir-nueva-categoria>+ Nueva categoría</button>
+    </div>
+    {% with al_crear="recargar" %}{% include "_nueva_categoria.html" %}{% endwith %}
+  </div>
+  <div class="seccion">
+    <h3 class="titulo-seccion">Dar de baja mi cuenta</h3>
+    <p>Tu cuenta se desactivará y dejarás de aparecer en las búsquedas. Se conservarán tus registros de amistad y juntadas.</p>
+    <form method="POST" action="{{ url_for('baja_cuenta') }}">
+      <input type="hidden" name="token" value="{{ session['perfil_token'] }}">
+      <div class="campo">
+        <label for="password-baja">Contraseña actual</label>
+        <input id="password-baja" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <label><input type="checkbox" name="confirmar" value="si" required data-mensaje="Marcá la casilla para confirmar la baja."> Quiero dar de baja mi cuenta</label>
+      <button type="submit" class="boton-enviar">Dar de baja mi cuenta</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,44 @@
+<div class="fila-horarios">
+  <div class="campo">
+    <label for="fecha">Fecha</label>
+    <input type="date" id="fecha" name="fecha" value="{{ fecha_sugerida }}" min="{{ hoy }}" required
+           data-mensaje-minimo="Elegí una fecha desde hoy.">
+  </div>
+  <div class="campo">
+    <label for="duracion">¿Cuánto dura?</label>
+    <select id="duracion">
+      {% for minutos, texto in duraciones %}
+      <option value="{{ minutos }}"{% if minutos == duracion_inicial %} selected{% endif %}>{{ texto }}</option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<div class="disponibilidad" data-disponibilidad="{{ url_for('consultar_disponibilidad') }}" hidden>
+  <div class="disponibilidad-encabezado">
+    <div class="semana-navegacion">
+      <button type="button" class="boton-neutro boton-chico" data-semana="-1" aria-label="Semana anterior">‹</button>
+      <button type="button" class="boton-neutro boton-chico" data-semana="1" aria-label="Semana siguiente">›</button>
+      <button type="button" class="boton-neutro boton-chico" data-semana="hoy">Hoy</button>
+      <span class="disponibilidad-titulo" data-titulo-semana></span>
+    </div>
+  </div>
+  <div class="leyenda" data-leyenda></div>
+  <div class="grilla" data-grilla></div>
+  <div data-huecos></div>
+</div>
+
+<div class="fila-horarios">
+  <div class="campo">
+    <label for="hora_inicio">Desde</label>
+    <input type="time" id="hora_inicio" name="hora_inicio" value="{{ request.form.get('hora_inicio', hora_desde) }}" required data-mensaje="Elegí a qué hora empieza."
+           data-no-pasado="fecha">
+  </div>
+  <div class="campo">
+    <label for="hora_fin">Hasta</label>
+    <input type="time" id="hora_fin" name="hora_fin" value="{{ request.form.get('hora_fin', hora_hasta) }}" required data-mensaje="Elegí a qué hora termina."
+           data-distinto-de="hora_inicio" data-mensaje-distinto="Tiene que ser distinta de la hora de inicio.">
+  </div>
+</div>
+
+<p class="aviso-choque" data-aviso-choque hidden></p>

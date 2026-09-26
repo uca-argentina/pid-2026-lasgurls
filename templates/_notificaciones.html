@@ -1,0 +1,78 @@
+<details class="desplegable">
+  <summary class="boton-icono" aria-label="Notificaciones{% if notificaciones_pendientes %} ({{ notificaciones_pendientes }} sin responder){% endif %}">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+    </svg>
+    {% if notificaciones_pendientes %}
+    <span class="insignia">{{ notificaciones_pendientes if notificaciones_pendientes < 10 else "9+" }}</span>
+    {% endif %}
+  </summary>
+
+  <div class="panel panel-notificaciones">
+    <div class="panel-encabezado">Notificaciones</div>
+
+    {% if not notificaciones_juntadas and not notificaciones_amistad %}
+    <p class="panel-vacio">Estás al día. No tenés nada para responder.</p>
+    {% endif %}
+
+    {% if notificaciones_juntadas %}
+    <h4 class="panel-subtitulo">Juntadas</h4>
+    <ul class="panel-lista">
+      {% for item in notificaciones_juntadas %}
+      <li class="notificacion">
+        <p class="notificacion-texto">
+          <strong>{{ item.organizador }}</strong> te invitó a <strong>{{ item.juntada.titulo }}</strong>
+          <span class="notificacion-detalle">
+            {{ item.juntada.fecha.strftime('%d/%m') }} · {{ texto_horario(item.juntada.fecha, item.juntada.hora_inicio, item.juntada.hora_fin) }}{% if item.estado == "Tal vez" %} · Dijiste tal vez{% endif %}
+          </span>
+        </p>
+        <div class="notificacion-acciones">
+          <form method="POST" action="{{ url_for('responder_juntada', juntada_id=item.juntada.id) }}">
+            <input type="hidden" name="volver" value="">
+            <input type="hidden" name="respuesta" value="Si">
+            <button type="submit" class="boton-principal boton-chico">Aceptar</button>
+          </form>
+          {% if item.estado != "Tal vez" %}
+          <form method="POST" action="{{ url_for('responder_juntada', juntada_id=item.juntada.id) }}">
+            <input type="hidden" name="volver" value="">
+            <input type="hidden" name="respuesta" value="Tal vez">
+            <button type="submit" class="boton-neutro boton-chico">Tal vez</button>
+          </form>
+          {% endif %}
+          <form method="POST" action="{{ url_for('responder_juntada', juntada_id=item.juntada.id) }}">
+            <input type="hidden" name="volver" value="">
+            <input type="hidden" name="respuesta" value="No">
+            <button type="submit" class="boton-neutro boton-rechazar boton-chico">Rechazar</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if notificaciones_amistad %}
+    <h4 class="panel-subtitulo">Solicitudes de amistad</h4>
+    <ul class="panel-lista">
+      {% for item in notificaciones_amistad %}
+      <li class="notificacion">
+        <p class="notificacion-texto">
+          <strong>{{ item.emisor.nombre }}</strong> quiere ser tu amigo/a
+          <span class="notificacion-detalle">{{ item.emisor.email }}</span>
+        </p>
+        <div class="notificacion-acciones">
+          <form method="POST" action="{{ url_for('aceptar_solicitud', solicitudID=item.solicitud.id) }}">
+            <input type="hidden" name="volver" value="">
+            <button type="submit" class="boton-principal boton-chico">Aceptar</button>
+          </form>
+          <form method="POST" action="{{ url_for('rechazar_solicitud', solicitudID=item.solicitud.id) }}">
+            <input type="hidden" name="volver" value="">
+            <button type="submit" class="boton-neutro boton-rechazar boton-chico">Rechazar</button>
+          </form>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</details>

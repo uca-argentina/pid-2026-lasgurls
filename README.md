@@ -9,19 +9,19 @@ Frontend: HTML + CSS (responsive, sin framework de JS por ahora)
 
 pip install -r requirements.txt
 
--> Crear Creadenciales en:
+-> Crear credenciales en:
 
 base_datos/credenciales.py
 
--> En la raiz del proyecto agregar certificado de conexion Aiven
+-> En la raíz del proyecto agregar el certificado de conexión de Aiven
 
-PID/ca.pem
+ca.pem
 
 -> correr app:
 
-python3 app.py y abri http://localhost:5000
+python3 app.py y abrí http://localhost:5001
 
--> tets:
+-> Tests:
 
 Usamos pytest para probar las validaciones de las clases de dominio. Para correrlos:
 

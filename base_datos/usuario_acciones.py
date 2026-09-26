@@ -17,17 +17,6 @@ def guardar(usuario):
     sesion.commit()
     sesion.close()
 
-def buscarPorNombre(nombre):
-    nombre=nombre.strip()
-    if not nombre:
-        return []
-    with Session() as sesion:
-        consulta=select(UsuarioTabla).where(
-            UsuarioTabla.nombre.contains(nombre,autoescape=True),
-            UsuarioTabla.activo.is_(True)
-        )
-        return sesion.scalars(consulta).all()
-
 def obtenerTodos():
     with Session() as sesion:
         consulta=select(UsuarioTabla).where(UsuarioTabla.activo.is_(True)).order_by(UsuarioTabla.nombre)

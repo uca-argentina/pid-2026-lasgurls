@@ -19,11 +19,11 @@ class Usuario:
             raise ValueError("El email no puede contener espacios")
         if email.count("@") != 1:
             raise ValueError("El correo debe contener un @")
-        usuario, arroba, dominio = email.partition("@")
+        usuario, _, dominio = email.partition("@")
         if not usuario or not dominio:
-            raise ValueError("El email no es valido")
+            raise ValueError("El email no es válido")
         if "." not in dominio:
-            raise ValueError("El email debe tener un dominio valido como '.com' ")
+            raise ValueError("El email debe tener un dominio válido como '.com' ")
 
     def validar_password(self, password):
         if not password or len(password) < 8:
@@ -50,7 +50,7 @@ class Usuario:
     @staticmethod
     def validar_nombre(nombre):
         if not nombre or not nombre.strip():
-            raise ValueError("El nombre no debe estar vacio")
+            raise ValueError("El nombre no debe estar vacío")
 
     def hashear_password(self, password):
         password_en_bytes = password.encode("utf-8")

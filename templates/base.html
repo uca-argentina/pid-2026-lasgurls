@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JuntApp — {% block titulo %}{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='logo.svg') }}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='registro.css') }}">
+</head>
+<body>
+
+<div class="barra-carga" aria-hidden="true"></div>
+
+{% if usuario_actual %}
+{% include "_header.html" %}
+{% endif %}
+
+<main class="pagina{% if usuario_actual %} pagina-app{% endif %}">
+  {% if not usuario_actual %}
+  <div class="marca">{% include "_logo.html" %}</div>
+  {% endif %}
+
+  {% block contenido %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='validacion.js') }}" defer></script>
+<script src="{{ url_for('static', filename='comun.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

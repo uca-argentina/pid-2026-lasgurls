@@ -29,7 +29,7 @@ invitado_2_id = buscar_por_email(invitado_2.email).id
 try:
     juntada = Juntada(
         organizador=organizador_id,
-        fecha="20/09/2026",
+        fecha="20/09/2030",
         titulo_juntada="Prueba de borrado por rechazo",
         hora_inicio="10:00",
         hora_fin="11:00",

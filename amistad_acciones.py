@@ -1,5 +1,5 @@
 from amistad import GestorAmistades
-from base_datos.solicitud_acciones import obtenerTodas, guardar, actualizarEstado
+from base_datos.solicitud_acciones import obtenerTodas, guardar, actualizarEstado, eliminarAmistad
 
 
 def enviarSolicitud(emisorID,receptorID):
@@ -19,3 +19,7 @@ def aceptarSolicitud(solicitudID,usuarioID):
 
 def rechazarSolicitud(solicitudID,usuarioID):
     return actualizarEstado(solicitudID,usuarioID,"Rechazada")
+
+
+def eliminarAmigo(usuarioID,amigoID):
+    return eliminarAmistad(usuarioID,amigoID)

@@ -4,7 +4,7 @@ from base_datos.juntada_acciones import guardar, obtener_invitaciones_de_usuario
 
 juntada = Juntada(
     organizador=1,
-    fecha="20/09/2026",
+    fecha="20/09/2030",
     titulo_juntada="Prueba de guardado",
     hora_inicio="10:00",
     hora_fin="11:00",
