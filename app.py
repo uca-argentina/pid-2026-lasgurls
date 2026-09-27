@@ -583,7 +583,7 @@ def consultar_disponibilidad():
     except ValueError as error:
         return {"error":str(error)},403
 
-    todos=[bloque for bloques in ocupados.values() for bloque in bloques]
+    todos=[(bloque["inicio"],bloque["fin"]) for bloques in ocupados.values() for bloque in bloques]
     desde=max(inicio,proxima_media_hora(datetime.now()))
     huecos=buscar_huecos(todos,desde,fin,duracion)
 
@@ -591,7 +591,7 @@ def consultar_disponibilidad():
         "yo":session["usuarioID"],
         "titulo":titulo_semana(lunes),
         "desde":a_texto(desde),
-        "ocupados":{usuario_id:[[a_texto(inicio),a_texto(fin)] for inicio,fin in bloques] for usuario_id,bloques in ocupados.items()},
+        "ocupados":{usuario_id:[[a_texto(bloque["inicio"]),a_texto(bloque["fin"])] for bloque in bloques] for usuario_id,bloques in ocupados.items()},
         "dias":[{
             "fecha":dia.isoformat(),
             "titulo":DIAS_SEMANA[dia.weekday()].capitalize(),
