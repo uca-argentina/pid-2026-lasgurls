@@ -40,7 +40,7 @@ def test_grupoConMiembrosEnNoneEsInvalido():
     assert str(error.value)=="El grupo tiene que tener al menos un amigo"
 
 
-def test_noTePodesAgregarAVosMismaAUnGrupo():
+def test_noPodesEstarEnTuPropioGrupo():
     with pytest.raises(ValueError) as error:
         Grupo(1,"Las de la facu",[1,2])
-    assert str(error.value)=="No te podes agregar a vos misma a un grupo"
+    assert str(error.value)=="No podes estar en tu propio grupo"

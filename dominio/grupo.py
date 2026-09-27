@@ -16,4 +16,4 @@ class Grupo:
         if not self.miembrosIDs:
             raise ValueError("El grupo tiene que tener al menos un amigo")
         if self.creadorID in self.miembrosIDs:
-            raise ValueError("No te podes agregar a vos misma a un grupo")
+            raise ValueError("No podes estar en tu propio grupo")
