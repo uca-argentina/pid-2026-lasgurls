@@ -109,6 +109,39 @@
         {% endfor %}
       </ul>
     </div>
+    <div class="seccion">
+      <div class="seccion-encabezado">
+        <h3 class="titulo-seccion">Mis grupos</h3>
+        <a href="{{ url_for('mostrarNuevoGrupo') }}" class="boton-secundario">Nuevo grupo</a>
+      </div>
+      <ul class="lista">
+        {% for grupo,miembros in grupos %}
+        <li class="fila">
+          <div class="fila-info">
+            <span class="fila-nombre">{{ grupo.nombre }}</span>
+            <span class="fila-detalle">{{ miembros|map(attribute="nombre")|join(", ") or "Sin integrantes" }}</span>
+          </div>
+          <div class="fila-acciones">
+            <button type="button" class="boton-neutro boton-rechazar" data-abrir-dialogo="borrar-grupo-{{ grupo.id }}">Borrar</button>
+          </div>
+          <dialog class="dialogo" id="borrar-grupo-{{ grupo.id }}">
+            <h3>¿Borrar el grupo «{{ grupo.nombre }}»?</h3>
+            <p>Tus amigos no se enteran y siguen siendo tus amigos</p>
+            <div class="dialogo-acciones">
+              <form method="dialog">
+                <button class="boton-neutro">Cancelar</button>
+              </form>
+              <form method="POST" action="{{ url_for('borrarGrupoPropio', grupoID=grupo.id) }}">
+                <button type="submit" class="boton-peligro">Borrar</button>
+              </form>
+            </div>
+          </dialog>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">Todavia no tenes grupos</li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
 </div>
 {% endblock %}

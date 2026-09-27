@@ -1411,6 +1411,18 @@ strong.grilla-linea {
   margin: 0 0 12px;
 }
 
+.seccion-encabezado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.seccion-encabezado .titulo-seccion {
+  margin: 0;
+}
+
 .lista {
   list-style: none;
   margin: 0;

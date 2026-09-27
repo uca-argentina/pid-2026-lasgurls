@@ -8,6 +8,7 @@ from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
 from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
+from dominio.grupo import Grupo
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.credenciales import SECRET_KEY
@@ -26,6 +27,7 @@ from base_datos.juntada_acciones import (
 )
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
 from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
+from base_datos.grupo_acciones import guardar as guardarGrupo, borrar as borrarGrupo, obtenerDeUsuario as obtenerGrupos
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
@@ -509,7 +511,8 @@ def mostrar_amistad():
         recibidas=solicitudes_recibidas(),
         sugerencias=sugerencias,
         amigos=amigos,
-        amigos_ids=amigos_ids
+        amigos_ids=amigos_ids,
+        grupos=obtenerGrupos(session["usuarioID"])
     )
 
 @app.route("/amistad/enviar/<int:receptorID>",methods=["POST"])
@@ -574,6 +577,35 @@ def eliminar_amigo(amigoID):
     if not eliminado:
         return "No se puede eliminar esta amistad.", 400
 
+    return redirect(url_for("mostrar_amistad"))
+
+@app.route("/grupo/nuevo",methods=["GET"])
+@login_requerido
+def mostrarNuevoGrupo():
+    return render_template("grupo_nuevo.html",amigos=obtener_amigos(session["usuarioID"]),nombre="",seleccionados=[],error=None)
+
+@app.route("/grupo/nuevo",methods=["POST"])
+@login_requerido
+def crearGrupo():
+    usuarioID=session["usuarioID"]
+    nombre=request.form.get("nombre","")
+    miembrosIDs=[int(miembroID) for miembroID in request.form.getlist("miembros")]
+    amigos=obtener_amigos(usuarioID)
+    amigosIDs=[amigo.id for amigo in amigos]
+    try:
+        grupo=Grupo(usuarioID,nombre,miembrosIDs)
+        if not set(miembrosIDs).issubset(amigosIDs):
+            raise ValueError("Solo podes agregar a tus amigos")
+    except ValueError as error:
+        return render_template("grupo_nuevo.html",amigos=amigos,nombre=nombre,seleccionados=miembrosIDs,error=str(error)),400
+    guardarGrupo(grupo)
+    return redirect(url_for("mostrar_amistad"))
+
+@app.route("/grupo/<int:grupoID>/borrar",methods=["POST"])
+@login_requerido
+def borrarGrupoPropio(grupoID):
+    if not borrarGrupo(grupoID,session["usuarioID"]):
+        return "No se puede borrar este grupo",400
     return redirect(url_for("mostrar_amistad"))
 
 @app.route("/disponibilidad",methods=["GET"])

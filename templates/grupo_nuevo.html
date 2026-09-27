@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nuevo grupo{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Nuevo grupo</h2>
+    <div class="encabezado-acciones">
+      <a href="{{ url_for('mostrar_amistad') }}" class="boton-texto">Cancelar</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <p class="mensaje-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('crearGrupo') }}">
+    <div class="campo">
+      <label for="nombre">Nombre</label>
+      <input type="text" id="nombre" name="nombre" placeholder="Por ejemplo: Las de la facu" value="{{ nombre }}" maxlength="30" required data-mensaje="Ponele un nombre al grupo">
+    </div>
+
+    <div class="seccion seccion-formulario">
+      <h3 class="titulo-seccion">Integrantes</h3>
+      <ul class="lista" data-requiere-uno="Elegi al menos un amigo">
+        {% for amigo in amigos %}
+        <li class="fila">
+          <label class="fila-seleccionable">
+            <input type="checkbox" name="miembros" value="{{ amigo.id }}"{% if amigo.id in seleccionados %} checked{% endif %}>
+            <span class="avatar avatar-chico">{{ amigo.nombre|iniciales }}</span>
+            <span class="fila-info">
+              <span class="fila-nombre">{{ amigo.nombre }}</span>
+              <span class="fila-detalle">{{ amigo.email }}</span>
+            </span>
+          </label>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">Todavia no tenes amigos para agregar</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <button type="submit" class="boton-enviar">Crear grupo</button>
+  </form>
+</div>
+{% endblock %}
