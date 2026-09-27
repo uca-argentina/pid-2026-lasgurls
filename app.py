@@ -366,27 +366,29 @@ def formulario_evento(fecha_sugerida,error=None,hora_desde="",hora_hasta=""):
         categorias=obtener_categorias(g.usuario.id),colores=COLORES,
     )
 
-@app.route("/agenda/nueva",methods=["POST"])
+@app.route("/agenda/nueva", methods=["POST"])
 @login_requerido
 def crear_agenda():
-    usuario_id=session["usuarioID"]
-    fecha_parametro=request.form.get("fecha","")
-    categoria_id=request.form.get("categoria",type=int)
+    usuario_id = session["usuarioID"]
+    fecha_parametro = request.form.get("fecha", "")
+    categoria_id = request.form.get("categoria", type=int)
+    visibilidad = request.form.get("visibilidad", "ocupado")
 
     try:
-        if categoria_id is not None and not puede_usar_categoria(categoria_id,usuario_id):
+        if categoria_id is not None and not puede_usar_categoria(categoria_id, usuario_id):
             raise ValueError("Elegí una categoría válida")
-        fecha_formateada=datetime.strptime(fecha_parametro, "%Y-%m-%d").strftime("%d/%m/%Y")
-        agenda=Agenda(
+        fecha_formateada = datetime.strptime(fecha_parametro, "%Y-%m-%d").strftime("%d/%m/%Y")
+        agenda = Agenda(
             usuario_id=usuario_id,
             fecha=fecha_formateada,
             titulo_reunion=request.form.get("titulo"),
             hora_inicio=request.form.get("hora_inicio"),
             hora_fin=request.form.get("hora_fin"),
             categoria_id=categoria_id,
+            visibilidad=visibilidad,
         )
     except ValueError as error:
-        return formulario_evento(fecha_parametro,error=str(error)), 400
+        return formulario_evento(fecha_parametro, error=str(error)), 400
 
     guardar_agenda(agenda)
     return redirect(url_for("mostrar_calendario", fecha=fecha_parametro))
@@ -424,6 +426,8 @@ def crear_juntada():
     invitados_ids=[int(id) for id in request.form.getlist("invitados")]
     amigos=obtener_amigos(usuario_id)
     amigos_ids=[amigo.id for amigo in amigos]
+    visibilidad = request.form.get("visibilidad", "ocupado")
+
 
     if not set(invitados_ids).issubset(set(amigos_ids)):
         seleccionados=[id for id in invitados_ids if id in amigos_ids]
@@ -442,6 +446,7 @@ def crear_juntada():
             hora_fin=request.form.get("hora_fin"),
             amigos_invitados=invitados_ids,
             categoria_id=categoria_id,
+            visibilidad=visibilidad,
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
