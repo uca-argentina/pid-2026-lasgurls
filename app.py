@@ -7,7 +7,7 @@ from flask import Flask, request, render_template, session, redirect, url_for, g
 from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
 from dominio.agenda.agenda import Agenda
-from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja
+from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.credenciales import SECRET_KEY
 from amistad_acciones import enviarSolicitud, aceptarSolicitud, rechazarSolicitud, eliminarAmigo
@@ -28,6 +28,7 @@ from base_datos.categoria_acciones import obtener_categorias, crear_categoria, b
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
 from dominio.disponibilidad.buscador_huecos import buscar_huecos, huecos_del_dia, proxima_media_hora
+
 
 NOMBRES_MES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -170,11 +171,14 @@ def logout():
     session.clear()
     return redirect(url_for("mostrar_login"))
 
-def pagina_perfil(nombre,email,error,guardado):
+def pagina_perfil(nombre, email, error, guardado, compartir_disponibilidad):
     return render_template(
-        "perfil.html",nombre=nombre,email=email,error=error,guardado=guardado,
-        categorias=obtener_categorias(g.usuario.id),colores=COLORES,
+        "perfil.html", nombre=nombre, email=email, error=error, guardado=guardado,
+        categorias=obtener_categorias(g.usuario.id), colores=COLORES,
+        compartir_disponibilidad=compartir_disponibilidad,
     )
+    
+
 
 @app.route("/perfil",methods=["GET","POST"])
 @login_requerido
@@ -192,8 +196,10 @@ def mostrar_perfil():
         if not secrets.compare_digest(request.form.get("token",""),session["perfil_token"]):
             return "El formulario venció. Recargá la página e intentá nuevamente.",400
         nombre=request.form.get("nombre","")
+        compartir_disponibilidad = "compartir_disponibilidad" in request.form
         try:
             actualizar_perfil(session["usuarioID"],nombre)
+            actualizar_compartir_disponibilidad(session["usuarioID"],compartir_disponibilidad)
         except ValueError as problema:
             error=str(problema)
             estado=400
@@ -202,7 +208,7 @@ def mostrar_perfil():
             return redirect(url_for("mostrar_perfil"))
 
     guardado=session.pop("perfil_guardado",False)
-    return pagina_perfil(nombre,email,error,guardado),estado
+    return pagina_perfil(nombre, email, error, guardado, usuario.compartir_disponibilidad), estado
 
 @app.route("/perfil/baja",methods=["POST"])
 @login_requerido

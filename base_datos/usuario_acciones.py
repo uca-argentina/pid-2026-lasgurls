@@ -53,6 +53,14 @@ def actualizar_perfil(usuarioID,nombre):
         usuario.nombre=nombre
         sesion.commit()
 
+def actualizar_compartir_disponibilidad(usuarioID, valor):
+    with Session() as sesion:
+        usuario = sesion.get(UsuarioTabla, usuarioID)
+        if usuario is None or not usuario.activo:
+            raise ValueError("La cuenta no está activa")
+        usuario.compartir_disponibilidad=valor
+        sesion.commit()
+     
 
 def dar_de_baja(usuarioID,password):
     with Session() as sesion:
