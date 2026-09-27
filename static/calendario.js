@@ -225,6 +225,55 @@
     return boton;
   }
 
+  function cruzCerrar(){
+    var formulario=crear("form","dialogo-cruz");
+    formulario.method="dialog";
+    var boton=crear("button","","×");
+    boton.setAttribute("aria-label","Cerrar");
+    boton.autofocus=true;
+    formulario.appendChild(boton);
+    return formulario;
+  }
+
+  function seccionDeComentarios(evento){
+    var seccion=crear("div","detalle-personas detalle-comentarios");
+    seccion.appendChild(crear("p","detalle-personas-titulo","Comentarios"));
+    if(evento.comentarios.length){
+      var lista=crear("ul");
+      evento.comentarios.forEach(function(comentario){
+        var item=crear("li");
+        var cuerpo=crear("div","detalle-comentario");
+        cuerpo.append(crear("span","detalle-comentario-autor",comentario.nombre+" · "+comentario.cuando),crear("span","",comentario.texto));
+        item.append(crear("span","avatar avatar-chico",comentario.iniciales),cuerpo);
+        lista.appendChild(item);
+      });
+      seccion.appendChild(lista);
+    }else{
+      seccion.appendChild(crear("p","detalle-sin-comentarios","Todavia no hay comentarios"));
+    }
+    var formulario=formularioPost(evento.comentar,{},"Comentar","boton-neutro");
+    formulario.className="detalle-comentar";
+    var campo=crear("input");
+    campo.type="text";
+    campo.name="texto";
+    campo.maxLength=500;
+    campo.required=true;
+    campo.placeholder="Escribi un comentario";
+    formulario.insertBefore(campo,formulario.lastChild);
+    seccion.appendChild(formulario);
+    return seccion;
+  }
+
+  function abrirJuntadaPedida(){
+    var url=new URL(window.location.href);
+    var juntadaID=Number(url.searchParams.get("juntada"));
+    if(!juntadaID)return;
+    url.searchParams.delete("juntada");
+    window.history.replaceState({},"",url.pathname+url.search);
+    var evento=datos.eventos.find(function(item){return item.juntadaID===juntadaID;});
+    if(evento)mostrarDetalle(evento);
+  }
+
   function mostrarDetalle(evento) {
     var dialogo = document.querySelector("[data-detalle-evento]");
     var etiqueta = evento.tipo === "personal"
@@ -233,7 +282,6 @@
     var tipo = crear("p", "detalle-tipo", etiqueta);
     tipo.prepend(circuloDeCategoria(evento));
     var acciones = crear("div", "dialogo-acciones");
-    acciones.appendChild(botonCerrar("Cerrar"));
 
     if (evento.responder) {
       [["No", "Rechazar", "boton-neutro boton-rechazar"], ["Tal vez", "Tal vez", "boton-neutro"], ["Si", "Aceptar", "boton-principal"]]
@@ -253,11 +301,14 @@
         "Sí, darme de baja", evento.abandonar));
     }
 
-    var contenido = [tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
+    var contenido = [cruzCerrar(), tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
-    contenido.push(acciones);
+    if(evento.comentar)contenido.push(seccionDeComentarios(evento));
+    if(acciones.children.length)contenido.push(acciones);
     dialogo.replaceChildren.apply(dialogo, contenido);
     if (!dialogo.open) dialogo.showModal();
+    var listaComentarios=dialogo.querySelector(".detalle-comentarios ul");
+    if(listaComentarios)listaComentarios.scrollTop=listaComentarios.scrollHeight;
   }
 
   function abrirCrear(inicio) {
@@ -315,4 +366,5 @@
   }, 60000);
 
   if (leerDatos()) dibujar(true);
+  if(datos)abrirJuntadaPedida();
 })();

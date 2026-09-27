@@ -760,6 +760,80 @@ strong.grilla-linea {
   color: var(--color-error);
 }
 
+.detalle-personas + .detalle-comentarios {
+  margin-top: 18px;
+}
+
+.detalle-comentarios li {
+  align-items: flex-start;
+}
+
+.detalle-comentario {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detalle-comentario-autor {
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+}
+
+.dialogo .detalle-sin-comentarios {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.detalle-comentar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.detalle-comentar input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.detalle-comentar input:focus {
+  outline: none;
+  border-color: var(--color-salvia);
+}
+
+.dialogo-cruz {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.dialogo-cruz button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: none;
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dialogo-cruz button:focus {
+  outline: none;
+}
+
+.dialogo-cruz + .detalle-tipo {
+  padding-right: 28px;
+}
+
 .mini-calendario-header {
   display: flex;
   align-items: center;
