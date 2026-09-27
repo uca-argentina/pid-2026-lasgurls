@@ -808,13 +808,16 @@ strong.grilla-linea {
   border-color: var(--color-salvia);
 }
 
-.dialogo-cruz {
+.dialogo-arriba {
   position: absolute;
   top: 12px;
   right: 12px;
+  display: flex;
+  align-items: flex-start;
 }
 
-.dialogo-cruz button {
+.dialogo-cruz button,
+.dialogo-menu > button {
   width: 32px;
   height: 32px;
   border: none;
@@ -826,12 +829,44 @@ strong.grilla-linea {
   cursor: pointer;
 }
 
-.dialogo-cruz button:focus {
+.dialogo-cruz button:focus,
+.dialogo-menu > button:focus {
   outline: none;
 }
 
-.dialogo-cruz + .detalle-tipo {
-  padding-right: 28px;
+.dialogo-arriba + .detalle-tipo {
+  padding-right: 64px;
+}
+
+.dialogo-menu {
+  position: relative;
+}
+
+.dialogo-menu ul {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1;
+  min-width: 170px;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  border: 1px solid var(--color-borde);
+  background: var(--color-tarjeta);
+  box-shadow: 0 8px 24px rgba(43, 43, 38, 0.12);
+  list-style: none;
+}
+
+.dialogo-menu-opcion {
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  color: var(--color-error);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .mini-calendario-header {

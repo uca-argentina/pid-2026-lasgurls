@@ -209,9 +209,10 @@
   }
 
   function botonConConfirmacion(evento, texto, pregunta, textoConfirmar, url) {
-    var boton = crear("button", "boton-neutro boton-rechazar", texto);
+    var boton = crear("button", "dialogo-menu-opcion", texto);
     boton.type = "button";
     boton.addEventListener("click", function () {
+      boton.closest("ul").hidden=true;
       var volver = crear("button", "boton-neutro dialogo-cerrar", "Volver");
       volver.type = "button";
       volver.addEventListener("click", function () {
@@ -220,9 +221,33 @@
       var acciones = crear("div", "dialogo-acciones");
       acciones.append(volver, formularioPost(url, {}, textoConfirmar, "boton-peligro"));
       var dialogo = document.querySelector("[data-detalle-evento]");
-      dialogo.querySelector(".dialogo-acciones").replaceWith(crear("p", "detalle-aviso", pregunta), acciones);
+      var avisoViejo=dialogo.querySelector(".detalle-aviso");
+      if(avisoViejo)avisoViejo.remove();
+      var aviso=crear("p", "detalle-aviso", pregunta);
+      var accionesViejas=dialogo.querySelector(".dialogo-acciones");
+      if(accionesViejas)accionesViejas.replaceWith(aviso,acciones);
+      else dialogo.append(aviso,acciones);
     });
     return boton;
+  }
+
+  function menuMas(opciones){
+    var menu=crear("div","dialogo-menu");
+    var boton=crear("button","","⋯");
+    boton.type="button";
+    boton.setAttribute("aria-label","Mas opciones");
+    var lista=crear("ul");
+    lista.hidden=true;
+    opciones.forEach(function(opcion){
+      var item=crear("li");
+      item.appendChild(opcion);
+      lista.appendChild(item);
+    });
+    boton.addEventListener("click",function(){
+      lista.hidden=!lista.hidden;
+    });
+    menu.append(boton,lista);
+    return menu;
   }
 
   function cruzCerrar(){
@@ -290,18 +315,22 @@
           acciones.appendChild(formularioPost(evento.responder, { respuesta: opcion[0] }, opcion[1], opcion[2]));
         });
     }
+    var opciones=[];
     if (evento.cancelar) {
-      acciones.appendChild(botonConConfirmacion(evento, "Cancelar juntada",
+      opciones.push(botonConConfirmacion(evento, "Cancelar juntada",
         "¿Seguro que querés cancelar «" + evento.titulo + "»? Se borra para todos los invitados y no se puede deshacer.",
         "Sí, cancelar juntada", evento.cancelar));
     }
     if (evento.abandonar) {
-      acciones.appendChild(botonConConfirmacion(evento, "No voy a ir",
+      opciones.push(botonConConfirmacion(evento, "No voy a ir",
         "¿Te das de baja de «" + evento.titulo + "»? El organizador va a ver que ya no vas.",
         "Sí, darme de baja", evento.abandonar));
     }
+    var arriba=crear("div","dialogo-arriba");
+    if(opciones.length)arriba.appendChild(menuMas(opciones));
+    arriba.appendChild(cruzCerrar());
 
-    var contenido = [cruzCerrar(), tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
+    var contenido = [arriba, tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));
     if(acciones.children.length)contenido.push(acciones);
@@ -353,6 +382,12 @@
       var inicio = mediaHora(GrillaSemanal.momentoEn(columna, evento));
       if (inicio >= new Date()) abrirCrear(inicio);
     }
+  });
+
+  document.addEventListener("click",function(evento){
+    document.querySelectorAll(".dialogo-menu ul:not([hidden])").forEach(function(lista){
+      if(!lista.parentNode.contains(evento.target))lista.hidden=true;
+    });
   });
 
   document.addEventListener("contenido-actualizado", function () {
