@@ -7,6 +7,7 @@ from flask import Flask, request, render_template, session, redirect, url_for, g
 from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
 from dominio.agenda.agenda import Agenda
+from dominio.comentario import Comentario
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.credenciales import SECRET_KEY
@@ -24,6 +25,7 @@ from base_datos.juntada_acciones import (
     darse_de_baja as bajarse_de_juntada,
 )
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
+from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
@@ -282,6 +284,15 @@ def mostrar_calendario():
     fin_semana=inicio_semana+timedelta(days=7)
     dias_con_eventos=set()
     eventos_de_la_semana=[]
+    juntadasIDs=[evento["juntada_id"] for evento in eventos if evento["juntada_id"]]
+    comentariosPorJuntada={}
+    for comentario,nombre in obtenerComentarios(juntadasIDs):
+        comentariosPorJuntada.setdefault(comentario.juntadaID,[]).append({
+            "nombre":"Vos" if comentario.usuarioID==usuario_id else nombre,
+            "iniciales":iniciales(nombre),
+            "texto":comentario.texto,
+            "cuando":f"{comentario.fechaHora:%d/%m %H:%M}",
+        })
     for evento in eventos:
         inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
         dias_con_eventos.add(evento["fecha"])
@@ -293,6 +304,8 @@ def mostrar_calendario():
                 "detalle":evento["detalle"],"personas":evento.get("personas",[]),
                 "categoria":evento.get("categoria"),"color":evento.get("color"),
                 "cuando":f"{nombre_del_dia(evento['fecha'])} · {texto_horario(evento['fecha'],evento['hora_inicio'],evento['hora_fin'])}",
+                "juntadaID":evento["juntada_id"],
+                "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
                 **acciones_del_evento(evento,ahora),
             })
 
@@ -335,6 +348,7 @@ def acciones_del_evento(evento,ahora):
         "responder":url_for("responder_juntada",juntada_id=juntada_id) if tipo in ("pendiente","tal_vez") else None,
         "cancelar":url_for("cancelar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
+        "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
     }
 
 def volver_al_calendario():
@@ -462,6 +476,17 @@ def abandonar_juntada(juntada_id):
     if not bajarse_de_juntada(juntada_id, session["usuarioID"], datetime.now()):
         return "No te podés dar de baja de esta juntada.", 400
     return volver_al_calendario()
+
+@app.route("/juntada/<int:juntadaID>/comentar",methods=["POST"])
+@login_requerido
+def comentarJuntada(juntadaID):
+    try:
+        comentario=Comentario(juntadaID,session["usuarioID"],request.form.get("texto"))
+    except ValueError as error:
+        return str(error),400
+    if not guardarComentario(comentario,datetime.now()):
+        return "No podes comentar en esta juntada",400
+    return redirect(url_for("mostrar_calendario",fecha=request.form.get("fecha"),juntada=juntadaID))
 
 @app.route("/amistad",methods=["GET"])
 @login_requerido
