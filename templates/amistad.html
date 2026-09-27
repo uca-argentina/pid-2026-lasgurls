@@ -122,6 +122,9 @@
             <span class="fila-detalle">{{ miembros|map(attribute="nombre")|join(", ") or "Sin integrantes" }}</span>
           </div>
           <div class="fila-acciones">
+            {% if miembros %}
+            <a href="{{ url_for('mostrar_nueva_juntada', grupo=grupo.id) }}" class="boton-secundario">Crear juntada</a>
+            {% endif %}
             <button type="button" class="boton-neutro boton-rechazar" data-abrir-dialogo="borrar-grupo-{{ grupo.id }}">Borrar</button>
           </div>
           <dialog class="dialogo" id="borrar-grupo-{{ grupo.id }}">

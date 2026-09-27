@@ -25,6 +25,16 @@
 
     <div class="seccion seccion-formulario">
       <h3 class="titulo-seccion">¿Con quién?</h3>
+      {% if grupos %}
+      <div class="campo">
+        <span class="etiqueta">Invitar a un grupo</span>
+        <div class="categorias">
+          {% for grupo,miembros in grupos %}
+          <button type="button" class="categoria-chip grupo-boton" data-grupo="{{ miembros|map(attribute='id')|join(',') }}">{{ grupo.nombre }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       <ul class="lista" data-requiere-uno="Elegí al menos un amigo para invitar.">
         {% for amigo in amigos %}
         <li class="fila">
@@ -54,4 +64,5 @@
 <script src="{{ url_for('static', filename='grilla_semanal.js') }}" defer></script>
 <script src="{{ url_for('static', filename='disponibilidad.js') }}" defer></script>
 <script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
+<script src="{{ url_for('static', filename='grupos.js') }}" defer></script>
 {% endblock %}

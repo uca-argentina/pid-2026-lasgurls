@@ -415,6 +415,7 @@ def formulario_juntada(amigos,fecha_sugerida,seleccionados,error=None,hora_desde
     return formulario_con_horario(
         "juntada_nueva.html",fecha_sugerida,120,error,hora_desde,hora_hasta,amigos=amigos,seleccionados=seleccionados,
         categorias=obtener_categorias(g.usuario.id),colores=COLORES,
+        grupos=[(grupo,miembros) for grupo,miembros in obtenerGrupos(g.usuario.id) if miembros],
     )
 
 @app.route("/juntada/nueva",methods=["GET"])
@@ -422,7 +423,12 @@ def formulario_juntada(amigos,fecha_sugerida,seleccionados,error=None,hora_desde
 def mostrar_nueva_juntada():
     amigos=obtener_amigos(session["usuarioID"])
     invitado_id=request.args.get("invitado",type=int)
-    seleccionados=[amigo.id for amigo in amigos if amigo.id==invitado_id]
+    grupoID=request.args.get("grupo",type=int)
+    miembrosIDs=[]
+    for grupo,miembros in obtenerGrupos(session["usuarioID"]):
+        if grupo.id==grupoID:
+            miembrosIDs=[miembro.id for miembro in miembros]
+    seleccionados=[amigo.id for amigo in amigos if amigo.id==invitado_id or amigo.id in miembrosIDs]
     hora_desde,hora_hasta=horario_sugerido(120)
     return formulario_juntada(amigos,fecha_pedida(),seleccionados,hora_desde=hora_desde,hora_hasta=hora_hasta)
 
