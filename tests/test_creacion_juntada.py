@@ -16,6 +16,7 @@ def test_creacion_correcta_de_juntada():
         "hora_inicio": "18:00:00",
         "hora_fin": "21:00:00",
         "amigos_invitados": [1, 3, 5],
+        "visibilidad": "ocupado",
     }
 
 
@@ -85,3 +86,31 @@ def test_juntada_de_hoy_mas_tarde_es_valida():
     juntada = Juntada(2, "01/09/2026", "Juntada", "12:00", "13:00", [1], ahora=datetime(2026, 9, 1, 12, 0, 45))
 
     assert juntada.registrar_juntada()["hora_inicio"] == "12:00:00"
+
+
+def test_visibilidad_invalido():
+    with pytest.raises(ValueError) as error:
+        Juntada(
+            organizador= 2,
+            fecha="15/09/2026",
+            titulo_juntada="Juntada",
+            hora_inicio="18:00",
+            hora_fin="21:00",
+            amigos_invitados=[1, 3, 5],
+            visibilidad="secreto",
+            ahora=AHORA,
+        )
+    assert str(error.value) == "La visibilidad tiene que ser : detalle, ocupado"
+    
+def test_visibilidad_cambia_a_detalle():
+        datos=Juntada(
+            organizador= 2,
+            fecha="15/09/2026",
+            titulo_juntada="Juntada",
+            hora_inicio="18:00",
+            hora_fin="21:00",
+            amigos_invitados=[1, 3, 5],
+            visibilidad="detalle",
+            ahora=AHORA,
+        )
+        assert datos.registrar_juntada()["visibilidad"] == "detalle"

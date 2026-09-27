@@ -15,6 +15,7 @@ def test_creacion_correcta_de_agenda():
         "fecha": "2026-09-15",
         "hora_inicio": "18:00:00",
         "hora_fin": "21:00:00",
+        "visibilidad": "ocupado",
     }
 
 def test_evento_que_termina_al_dia_siguiente_es_valido():
@@ -59,3 +60,29 @@ def test_evento_de_hoy_mas_tarde_es_valido():
     datos = Agenda(1, "01/09/2026", "Dentista", "12:30", "13:00", ahora=AHORA)
 
     assert datos.registrar_agenda()["hora_inicio"] == "12:30:00"
+
+def test_visibilidad_invalido():
+    with pytest.raises(ValueError) as error:
+        Agenda(
+            usuario_id=1,
+            fecha="15/09/2026",
+            titulo_reunion="Juntada",
+            hora_inicio="18:00",
+            hora_fin="21:00",
+            visibilidad="secreto",
+            ahora=AHORA,
+        )
+    assert str(error.value) == "La visibilidad tiene que ser : detalle, ocupado"
+    
+def test_visibilidad_cambia_a_detalle():
+    datos = Agenda(
+        usuario_id=1,
+        fecha="01/09/2026",
+        titulo_reunion="Dentista",
+        hora_inicio="12:30",
+        hora_fin="13:00",
+        visibilidad="detalle",
+        ahora=AHORA,
+    )
+
+    assert datos.registrar_agenda()["visibilidad"] == "detalle"
