@@ -19,6 +19,15 @@
       <label for="nombre">Nombre</label>
       <input id="nombre" name="nombre" value="{{ nombre }}" autocomplete="name" maxlength="255" required data-mensaje="Escribí tu nombre.">
     </div>
+    <div class="seccion">
+  <label class="fila fila-seleccionable">
+    <input type="checkbox" name="compartir_disponibilidad" {% if compartir_disponibilidad %}checked{% endif %}>
+    <span class="fila-info">
+      <span class="fila-nombre">Compartir detalles con mis amigos</span>
+      <span class="fila-detalle">Tus amigos además van a poder ver el título de los eventos que vos marques como "con detalle".</span>
+    </span>
+  </label>
+</div>
     <button type="submit" class="boton-enviar">Guardar cambios</button>
   </form>
   <div class="seccion">
