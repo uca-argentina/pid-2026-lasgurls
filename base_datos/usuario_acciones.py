@@ -6,7 +6,7 @@ from dominio.usuario import Usuario
 def guardar(usuario):
     if buscar_por_email(usuario.email) is not None:
         raise ValueError("Ya existe una cuenta registrada con ese email")
-    
+
     sesion = Session()
     usuario_tabla = UsuarioTabla(
         email=usuario.email,
@@ -60,7 +60,6 @@ def actualizar_compartir_disponibilidad(usuarioID, valor):
             raise ValueError("La cuenta no está activa")
         usuario.compartir_disponibilidad=valor
         sesion.commit()
-     
 
 def dar_de_baja(usuarioID,password):
     with Session() as sesion:

@@ -33,7 +33,6 @@ from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
 from dominio.disponibilidad.buscador_huecos import buscar_huecos, huecos_del_dia, proxima_media_hora
 
-
 NOMBRES_MES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
@@ -84,6 +83,9 @@ def a_texto(momento):
 
 def dias_de_la_semana(lunes):
     return [lunes+timedelta(days=i) for i in range(7)]
+
+def dia_de_la_grilla(dia):
+    return {"fecha":dia.isoformat(),"titulo":DIAS_SEMANA[dia.weekday()].capitalize(),"numero":dia.day,"nombre":nombre_del_dia(dia)}
 
 def titulo_semana(lunes):
     domingo=lunes+timedelta(days=6)
@@ -161,28 +163,22 @@ def login():
     usuario_encontrado=verificar_login(email,password)
     if usuario_encontrado is None:
         return render_template("login.html", error="Email o contraseña incorrectos"), 401
- 
+
     session.clear()
     session["usuarioID"]=usuario_encontrado.id
     return redirect(url_for("mostrar_calendario"))
-
-
-
-
 
 @app.route("/logout",methods=["POST"])
 def logout():
     session.clear()
     return redirect(url_for("mostrar_login"))
 
-def pagina_perfil(nombre, email, error, guardado, compartir_disponibilidad):
+def pagina_perfil(nombre, email, error, guardado):
     return render_template(
         "perfil.html", nombre=nombre, email=email, error=error, guardado=guardado,
         categorias=obtener_categorias(g.usuario.id), colores=COLORES,
-        compartir_disponibilidad=compartir_disponibilidad,
+        compartir_disponibilidad=g.usuario.compartir_disponibilidad,
     )
-    
-
 
 @app.route("/perfil",methods=["GET","POST"])
 @login_requerido
@@ -212,7 +208,7 @@ def mostrar_perfil():
             return redirect(url_for("mostrar_perfil"))
 
     guardado=session.pop("perfil_guardado",False)
-    return pagina_perfil(nombre, email, error, guardado, usuario.compartir_disponibilidad), estado
+    return pagina_perfil(nombre, email, error, guardado), estado
 
 @app.route("/perfil/baja",methods=["POST"])
 @login_requerido
@@ -226,7 +222,7 @@ def baja_cuenta():
             raise ValueError("Confirmá que querés dar de baja tu cuenta")
         dar_de_baja(session["usuarioID"],request.form.get("password",""))
     except ValueError as error:
-        return pagina_perfil(usuario.nombre,usuario.email,str(error),False,usuario.compartir_disponibilidad),400
+        return pagina_perfil(usuario.nombre,usuario.email,str(error),False),400
     session.clear()
     return redirect(url_for("mostrar_login",baja="1"))
 
@@ -327,10 +323,7 @@ def mostrar_calendario():
 
     datos={
         "fecha":fecha_seleccionada.isoformat(),
-        "dias":[{
-            "fecha":dia.isoformat(),"titulo":DIAS_SEMANA[dia.weekday()].capitalize(),"numero":dia.day,
-            "nombre":nombre_del_dia(dia),
-        } for dia in dias_de_la_semana(lunes)],
+        "dias":[dia_de_la_grilla(dia) for dia in dias_de_la_semana(lunes)],
         "eventos":eventos_de_la_semana,
         "urls":{"nuevo_evento":url_for("mostrar_nueva_agenda"),"nueva_juntada":url_for("mostrar_nueva_juntada")},
     }
@@ -459,7 +452,6 @@ def crear_juntada():
     amigos=obtener_amigos(usuario_id)
     amigos_ids=[amigo.id for amigo in amigos]
     visibilidad = request.form.get("visibilidad", "ocupado")
-
 
     if not set(invitados_ids).issubset(set(amigos_ids)):
         seleccionados=[id for id in invitados_ids if id in amigos_ids]
@@ -656,7 +648,6 @@ def consultar_disponibilidad():
 
     duracion=timedelta(minutes=minutos)
     lunes=fecha-timedelta(days=fecha.weekday())
-    dias=[lunes+timedelta(days=i) for i in range(7)]
     inicio=datetime.combine(lunes,time(0))
     fin=inicio+timedelta(days=7)+duracion
     try:
@@ -674,12 +665,9 @@ def consultar_disponibilidad():
         "desde":a_texto(desde),
         "ocupados":{usuario_id:[[a_texto(bloque["inicio"]),a_texto(bloque["fin"]),bloque.get("titulo")] for bloque in bloques] for usuario_id,bloques in ocupados.items()},
         "dias":[{
-            "fecha":dia.isoformat(),
-            "titulo":DIAS_SEMANA[dia.weekday()].capitalize(),
-            "numero":dia.day,
-            "nombre":nombre_del_dia(dia),
+            **dia_de_la_grilla(dia),
             "huecos":[{"inicio":a_texto(inicio),"fin":a_texto(fin)} for inicio,fin in huecos_del_dia(huecos,dia,duracion)],
-        } for dia in dias],
+        } for dia in dias_de_la_semana(lunes)],
     }
 
 if __name__ == "__main__":

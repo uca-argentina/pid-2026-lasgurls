@@ -94,6 +94,7 @@ body {
   z-index: 20;
   background: var(--color-tarjeta);
   border-bottom: 1px solid var(--color-borde);
+  view-transition-name: header;
 }
 
 .header-contenido {
@@ -172,14 +173,6 @@ body {
 
 @view-transition {
   navigation: auto;
-}
-
-.header {
-  view-transition-name: header;
-}
-
-.tarjeta-formulario {
-  view-transition-name: tarjeta;
 }
 
 ::view-transition-group(tarjeta) {
@@ -415,6 +408,7 @@ body {
   min-width: 0;
   max-width: 380px;
   border: 1px solid var(--color-borde);
+  view-transition-name: tarjeta;
 }
 
 .tarjeta-formulario h2 {
@@ -568,9 +562,8 @@ body {
 
 .grilla-linea {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 strong.grilla-linea {
@@ -621,6 +614,7 @@ strong.grilla-linea {
 
 .grilla-fila {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 5px;
   min-width: 0;
@@ -632,15 +626,14 @@ strong.grilla-linea {
 }
 
 .grilla-fila-texto {
-  display: -webkit-box;
-  overflow: hidden;
+  flex: 1 1 60px;
+  min-width: 0;
   padding-top: 2px;
   font-size: 0.72rem;
   font-weight: 600;
   line-height: 1.2;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 .grilla-fila-horario .grilla-fila-texto {
@@ -822,8 +815,20 @@ strong.grilla-linea {
 
 .detalle-comentar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.detalle-comentar .campo-error {
+  flex-basis: 100%;
+  order: 3;
+  margin: 0;
+}
+
+.detalle-comentar input[aria-invalid="true"],
+.detalle-comentar input[aria-invalid="true"]:focus {
+  border-color: var(--color-error);
 }
 
 .detalle-comentar input {
@@ -1687,7 +1692,6 @@ strong.grilla-linea {
 .ocupado-persona-2 { background: #f6eed4; border-color: #d6b863; }
 .ocupado-persona-3 { background: #ebe6f3; border-color: #a896c7; }
 .ocupado-persona-4 { background: #f3e3ea; border-color: #c98aa4; }
-.ocupado-varios { background: #ebe7df; border-color: #a39a88; }
 
 .disponibilidad .evento {
   cursor: default;

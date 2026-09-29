@@ -60,7 +60,10 @@
     elemento.setAttribute("aria-describedby", id);
   }
 
+  var validando = false;
+
   function validar(formulario) {
+    validando = true;
     var conError = [];
     formulario.querySelectorAll("input, select, textarea").forEach(function (campo) {
       if (!campo.willValidate) return;
@@ -74,6 +77,7 @@
       marcar(grupo, "grupo-" + indice, valido ? "" : grupo.dataset.requiereUno);
       if (!valido) conError.push(grupo.querySelector("input") || grupo);
     });
+    validando = false;
     return conError.sort(function (a, b) {
       return a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
     });
@@ -93,6 +97,15 @@
     evento.stopImmediatePropagation();
     conError[0].focus({ preventScroll: true });
     conError[0].scrollIntoView({ block: "center", behavior: "smooth" });
+  }, true);
+
+  document.addEventListener("invalid", function (evento) {
+    var formulario = evento.target.form;
+    evento.preventDefault();
+    if (!formulario || validando) return;
+    formulario.dataset.intentado = "";
+    var conError = validar(formulario);
+    if (conError[0] === evento.target) conError[0].focus();
   }, true);
 
   function revalidar(evento) {

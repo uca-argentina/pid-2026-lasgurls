@@ -26,6 +26,38 @@ window.GrillaSemanal = (function () {
     return redondeado;
   }
 
+  function asignarCarriles(eventos) {
+    var grupo = [];
+    var finesDeCarril = [];
+    var finDelGrupo = 0;
+    function cerrarGrupo() {
+      grupo.forEach(function (evento) {
+        evento.izquierda = (evento.carril / finesDeCarril.length) * 100;
+        evento.ancho = 100 / finesDeCarril.length;
+      });
+      grupo = [];
+      finesDeCarril = [];
+    }
+    eventos.slice().sort(function (a, b) {
+      return a.inicio - b.inicio || b.fin - a.fin;
+    }).forEach(function (evento) {
+      if (grupo.length && evento.inicio >= finDelGrupo) cerrarGrupo();
+      var carril = finesDeCarril.findIndex(function (fin) {
+        return fin <= evento.inicio;
+      });
+      if (carril === -1) {
+        carril = finesDeCarril.length;
+        finesDeCarril.push(evento.fin);
+      } else {
+        finesDeCarril[carril] = evento.fin;
+      }
+      evento.carril = carril;
+      grupo.push(evento);
+      finDelGrupo = Math.max(finDelGrupo, evento.fin);
+    });
+    cerrarGrupo();
+  }
+
   function inicioDelDia(fecha) {
     return new Date(fecha + "T00:00");
   }
@@ -37,12 +69,11 @@ window.GrillaSemanal = (function () {
       var fin = Math.min(bloque.fin.getTime(), dia + UN_DIA);
       if (fin <= inicio) return;
 
-      var carriles = bloque.carriles || 1;
       var elemento = crear("span", "grilla-bloque " + (bloque.clase || ""), bloque.texto);
       elemento.style.top = ((inicio - dia) / UN_DIA) * 100 + "%";
       elemento.style.height = ((fin - inicio) / UN_DIA) * 100 + "%";
-      elemento.style.left = ((bloque.carril || 0) / carriles) * 100 + "%";
-      elemento.style.width = 100 / carriles + "%";
+      elemento.style.left = (bloque.izquierda || 0) + "%";
+      elemento.style.width = (bloque.ancho || 100) + "%";
       if (bloque.titulo) elemento.title = bloque.titulo;
       if (bloque.color) elemento.style.setProperty("--color-evento", bloque.color);
       (bloque.lineas || []).forEach(function (linea, indice) {
@@ -57,8 +88,7 @@ window.GrillaSemanal = (function () {
       if (bloque.avatares && bloque.avatares.length) {
         var avatares = crear("span", "grilla-avatares");
         bloque.avatares.forEach(function (avatar) {
-          var dato = typeof avatar === "string" ? { texto: avatar } : avatar;
-          avatares.appendChild(crear("span", "grilla-avatar " + (dato.clase || ""), dato.texto));
+          avatares.appendChild(crear("span", "grilla-avatar", avatar));
         });
         elemento.appendChild(avatares);
       }
@@ -131,7 +161,7 @@ window.GrillaSemanal = (function () {
   }
 
   return {
-    dibujar: dibujar, agregarBloque: agregarBloque, momentoEn: momentoEn,
+    dibujar: dibujar, momentoEn: momentoEn, asignarCarriles: asignarCarriles,
     mostrarFantasma: mostrarFantasma, borrarFantasma: borrarFantasma,
     crear: crear, textoHora: textoHora, fechaIso: fechaIso, mediaHora: mediaHora,
   };

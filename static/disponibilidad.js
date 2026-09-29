@@ -111,46 +111,18 @@
     });
   }
 
-  function sinRepetidos(valor, posicion, lista) {
-    return lista.indexOf(valor) === posicion;
-  }
-
-  function tramosOcupados() {
-    var lista = personas();
+  function bloquesOcupados() {
     var bloques = [];
-    lista.forEach(function (persona, indice) {
+    personas().forEach(function (persona, indice) {
       (datos.ocupados[persona.id] || []).forEach(function (bloque) {
-        bloques.push({ inicio: new Date(bloque[0]).getTime(), fin: new Date(bloque[1]).getTime(), persona: indice, titulo: bloque[2] || "" });
+        bloques.push({
+          inicio: new Date(bloque[0]).getTime(), fin: new Date(bloque[1]).getTime(), titulo: bloque[2] || "",
+          persona: Object.assign({ color: indice % COLORES_PERSONAS }, persona),
+        });
       });
     });
-    var bordes = [];
-    bloques.forEach(function (bloque) {
-      bordes.push(bloque.inicio, bloque.fin);
-    });
-    bordes = bordes.filter(sinRepetidos).sort(function (a, b) { return a - b; });
-
-    var tramos = [];
-    for (var i = 0; i < bordes.length - 1; i++) {
-      var enElTramo = bloques.filter(function (bloque) {
-        return bloque.inicio <= bordes[i] && bloque.fin >= bordes[i + 1];
-      });
-      if (!enElTramo.length) continue;
-      var ocupados = [];
-      lista.forEach(function (persona, indice) {
-        var suyos = enElTramo.filter(function (bloque) { return bloque.persona === indice; });
-        if (!suyos.length) return;
-        var titulos = suyos.map(function (bloque) { return bloque.titulo; }).filter(Boolean).filter(sinRepetidos);
-        ocupados.push(Object.assign({ color: indice % COLORES_PERSONAS, titulo: titulos.join(" · ") }, persona));
-      });
-      var clave = ocupados.map(function (persona) { return persona.id + ":" + persona.titulo; }).join("|");
-      var anterior = tramos[tramos.length - 1];
-      if (anterior && anterior.fin.getTime() === bordes[i] && anterior.clave === clave) {
-        anterior.fin = new Date(bordes[i + 1]);
-      } else {
-        tramos.push({ inicio: new Date(bordes[i]), fin: new Date(bordes[i + 1]), clave: clave, personas: ocupados });
-      }
-    }
-    return tramos;
+    GrillaSemanal.asignarCarriles(bloques);
+    return bloques;
   }
 
   function dibujarGrilla(hora) {
@@ -162,17 +134,19 @@
       });
     });
 
-    tramosOcupados().forEach(function (tramo) {
-      var horario = textoHora(tramo.inicio) + "–" + textoHora(tramo.fin);
+    bloquesOcupados().forEach(function (bloque) {
+      var inicio = new Date(bloque.inicio);
+      var fin = new Date(bloque.fin);
+      var horario = textoHora(inicio) + "–" + textoHora(fin);
+      var persona = bloque.persona;
       bloques.push({
-        inicio: tramo.inicio, fin: tramo.fin,
-        clase: "evento " + (tramo.personas.length === 1 ? "ocupado-persona-" + tramo.personas[0].color : "ocupado-varios"),
-        filas: tramo.personas.map(function (persona) {
-          return { avatar: { texto: persona.iniciales, clase: "grilla-persona-" + persona.color }, texto: persona.titulo };
-        }).concat([{ texto: horario, clase: "grilla-fila-horario" }]),
-        titulo: tramo.personas.map(function (persona) {
-          return persona.nombre + ": " + (persona.titulo || "ocupado/a");
-        }).join("\n") + "\n" + horario,
+        inicio: inicio, fin: fin, izquierda: bloque.izquierda, ancho: bloque.ancho,
+        clase: "evento ocupado-persona-" + persona.color,
+        filas: [
+          { avatar: { texto: persona.iniciales, clase: "grilla-persona-" + persona.color }, texto: bloque.titulo },
+          { texto: horario, clase: "grilla-fila-horario" },
+        ],
+        titulo: persona.nombre + ": " + (bloque.titulo || "ocupado/a") + "\n" + horario,
       });
     });
 

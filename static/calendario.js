@@ -1,7 +1,6 @@
 (function () {
   var ESTRECHO = window.matchMedia("(max-width: 700px)");
   var ETIQUETAS = {
-    personal: "Evento personal",
     organizo: "Juntada que organizás",
     confirmada: "Juntada confirmada",
     pendiente: "Invitación sin responder",
@@ -34,37 +33,6 @@
       destino.searchParams.set(clave, parametros[clave]);
     });
     return destino.pathname + destino.search;
-  }
-
-  function asignarCarriles(eventos) {
-    var grupo = [];
-    var finesDeCarril = [];
-    var finDelGrupo = 0;
-    function cerrarGrupo() {
-      grupo.forEach(function (evento) {
-        evento.carriles = finesDeCarril.length;
-      });
-      grupo = [];
-      finesDeCarril = [];
-    }
-    eventos.slice().sort(function (a, b) {
-      return a.inicio - b.inicio || b.fin - a.fin;
-    }).forEach(function (evento) {
-      if (grupo.length && evento.inicio >= finDelGrupo) cerrarGrupo();
-      var carril = finesDeCarril.findIndex(function (fin) {
-        return fin <= evento.inicio;
-      });
-      if (carril === -1) {
-        carril = finesDeCarril.length;
-        finesDeCarril.push(evento.fin);
-      } else {
-        finesDeCarril[carril] = evento.fin;
-      }
-      evento.carril = carril;
-      grupo.push(evento);
-      finDelGrupo = Math.max(finDelGrupo, evento.fin);
-    });
-    cerrarGrupo();
   }
 
   function avataresDelBloque(personas) {
@@ -140,14 +108,14 @@
     var eventos = datos.eventos.map(function (evento, indice) {
       return { inicio: new Date(evento.inicio).getTime(), fin: new Date(evento.fin).getTime(), indice: indice };
     });
-    asignarCarriles(eventos);
+    GrillaSemanal.asignarCarriles(eventos);
 
     var bloques = eventos.map(function (posicion) {
       var evento = datos.eventos[posicion.indice];
       var inicio = new Date(posicion.inicio);
       var fin = new Date(posicion.fin);
       return {
-        inicio: inicio, fin: fin, carril: posicion.carril, carriles: posicion.carriles,
+        inicio: inicio, fin: fin, izquierda: posicion.izquierda, ancho: posicion.ancho,
         clase: "evento evento-" + evento.tipo,
         color: evento.color,
         lineas: [evento.titulo, textoHora(inicio) + " – " + textoHora(fin)],
@@ -284,6 +252,7 @@
     campo.maxLength=500;
     campo.required=true;
     campo.placeholder="Escribi un comentario";
+    campo.dataset.mensaje="Escribí un comentario antes de enviarlo.";
     formulario.insertBefore(campo,formulario.lastChild);
     seccion.appendChild(formulario);
     return seccion;
