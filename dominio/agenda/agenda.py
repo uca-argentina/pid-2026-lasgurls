@@ -4,7 +4,7 @@ from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEv
 
 
 class Agenda:
-    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin, ahora=None, categoria_id=None, visibilidad="ocupado"):
+    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True):
         self.usuario_id = usuario_id
         self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
@@ -14,6 +14,7 @@ class Agenda:
         self.visibilidad=visibilidad
 
         self.validar_agenda()
+        ValidadorDetipoEvento().validar_que_pueda_mostrar_detalle(self.visibilidad, comparte_detalles)
         ValidadorDetipoEvento().validar_que_no_empiece_en_el_pasado(self.fecha, self.hora_inicio, ahora or datetime.now(), "El evento")
 
     def validar_agenda(self):

@@ -48,6 +48,12 @@ window.GrillaSemanal = (function () {
       (bloque.lineas || []).forEach(function (linea, indice) {
         elemento.appendChild(crear(indice === 0 ? "strong" : "span", "grilla-linea", linea));
       });
+      (bloque.filas || []).forEach(function (fila) {
+        var renglon = crear("span", "grilla-fila " + (fila.clase || ""));
+        if (fila.avatar) renglon.appendChild(crear("span", "grilla-avatar " + (fila.avatar.clase || ""), fila.avatar.texto));
+        if (fila.texto) renglon.appendChild(crear("span", "grilla-fila-texto", fila.texto));
+        elemento.appendChild(renglon);
+      });
       if (bloque.avatares && bloque.avatares.length) {
         var avatares = crear("span", "grilla-avatares");
         bloque.avatares.forEach(function (avatar) {

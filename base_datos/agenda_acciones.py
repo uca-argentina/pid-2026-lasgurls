@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from base_datos.configuracion import Session
 from base_datos.agenda_tabla import AgendaTabla
 from base_datos.categoria_tabla import CategoriaTabla
@@ -28,3 +28,12 @@ def obtener_por_usuario(usuario_id, fecha=None, fecha_fin=None):
         if fecha is not None:
             consulta=consulta.where(AgendaTabla.fecha.between(fecha,fecha_fin or fecha))
         return sesion.execute(consulta).all()
+
+
+def borrar_evento(evento_id, usuario_id):
+    with Session() as sesion:
+        resultado = sesion.execute(
+            delete(AgendaTabla).where(AgendaTabla.id == evento_id, AgendaTabla.usuario_id == usuario_id)
+        )
+        sesion.commit()
+        return resultado.rowcount == 1

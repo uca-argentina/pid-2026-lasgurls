@@ -111,52 +111,46 @@
     });
   }
 
-  function tramosOcupados() {
-  var bloques = [];
-  personas().forEach(function (persona, indice) {
-    (datos.ocupados[persona.id] || []).forEach(function (bloque) {
-      bloques.push({ inicio: new Date(bloque[0]).getTime(), fin: new Date(bloque[1]).getTime(), persona: indice, titulo: bloque[2] || null });
-    });
-  });
-  var bordes = [];
-  bloques.forEach(function (bloque) {
-    bordes.push(bloque.inicio, bloque.fin);
-  });
-  bordes = bordes.filter(function (borde, posicion) { return bordes.indexOf(borde) === posicion; }).sort(function (a, b) { return a - b; });
-
-  var lista = personas();
-  var tramos = [];
-  for (var i = 0; i < bordes.length - 1; i++) {
-    var ocupadosEnTramo = bloques.filter(function (bloque) {
-      return bloque.inicio <= bordes[i] && bloque.fin >= bordes[i + 1];
-    });
-    var indices = ocupadosEnTramo.map(function (bloque) { return bloque.persona; });
-    indices = indices.filter(function (persona, posicion) { return indices.indexOf(persona) === posicion; }).sort();
-    if (!indices.length) continue;
-    var clave = indices.join();
-    var anterior = tramos[tramos.length - 1];
-    if (anterior && anterior.fin.getTime() === bordes[i] && anterior.clave === clave) {
-      anterior.fin = new Date(bordes[i + 1]);
-    } else {
-      tramos.push({
-        inicio: new Date(bordes[i]), fin: new Date(bordes[i + 1]), clave: clave,
-        personas: indices.map(function (indice) {
-          var bloqueDeEstaPersona = ocupadosEnTramo.find(function (bloque) { return bloque.persona === indice; });
-          return Object.assign(
-            { color: indice % COLORES_PERSONAS, titulo: bloqueDeEstaPersona ? bloqueDeEstaPersona.titulo : null },
-            lista[indice]
-          );
-        }),
-      });
-    }
+  function sinRepetidos(valor, posicion, lista) {
+    return lista.indexOf(valor) === posicion;
   }
-  return tramos;
-}
 
-  function nombresJuntos(lista) {
-    var nombres = lista.map(function (persona) { return persona.nombre; });
-    if (nombres.length > 2) return nombres.length + " personas";
-    return nombres.join(" y ");
+  function tramosOcupados() {
+    var lista = personas();
+    var bloques = [];
+    lista.forEach(function (persona, indice) {
+      (datos.ocupados[persona.id] || []).forEach(function (bloque) {
+        bloques.push({ inicio: new Date(bloque[0]).getTime(), fin: new Date(bloque[1]).getTime(), persona: indice, titulo: bloque[2] || "" });
+      });
+    });
+    var bordes = [];
+    bloques.forEach(function (bloque) {
+      bordes.push(bloque.inicio, bloque.fin);
+    });
+    bordes = bordes.filter(sinRepetidos).sort(function (a, b) { return a - b; });
+
+    var tramos = [];
+    for (var i = 0; i < bordes.length - 1; i++) {
+      var enElTramo = bloques.filter(function (bloque) {
+        return bloque.inicio <= bordes[i] && bloque.fin >= bordes[i + 1];
+      });
+      if (!enElTramo.length) continue;
+      var ocupados = [];
+      lista.forEach(function (persona, indice) {
+        var suyos = enElTramo.filter(function (bloque) { return bloque.persona === indice; });
+        if (!suyos.length) return;
+        var titulos = suyos.map(function (bloque) { return bloque.titulo; }).filter(Boolean).filter(sinRepetidos);
+        ocupados.push(Object.assign({ color: indice % COLORES_PERSONAS, titulo: titulos.join(" · ") }, persona));
+      });
+      var clave = ocupados.map(function (persona) { return persona.id + ":" + persona.titulo; }).join("|");
+      var anterior = tramos[tramos.length - 1];
+      if (anterior && anterior.fin.getTime() === bordes[i] && anterior.clave === clave) {
+        anterior.fin = new Date(bordes[i + 1]);
+      } else {
+        tramos.push({ inicio: new Date(bordes[i]), fin: new Date(bordes[i + 1]), clave: clave, personas: ocupados });
+      }
+    }
+    return tramos;
   }
 
   function dibujarGrilla(hora) {
@@ -167,27 +161,18 @@
         bloques.push({ inicio: new Date(hueco.inicio), fin: new Date(hueco.fin), clase: "grilla-libre", titulo: TEXTOS.libre + ": hacé clic para elegir" });
       });
     });
+
     tramosOcupados().forEach(function (tramo) {
       var horario = textoHora(tramo.inicio) + "–" + textoHora(tramo.fin);
-      var detalle;
-      var lineas;
-      if (tramo.personas.length === 1) {
-        var persona = tramo.personas[0];
-        detalle = persona.nombre + (persona.titulo ? ": " + persona.titulo : " está ocupado/a");
-        lineas = persona.titulo ? [persona.titulo, horario] : [persona.nombre + " ocupado/a", horario];
-      } else {
-        detalle = tramo.personas.map(function (persona) {
-          return persona.nombre + (persona.titulo ? ": " + persona.titulo : " (ocupado/a)");
-        }).join(" · ");
-      }
       bloques.push({
         inicio: tramo.inicio, fin: tramo.fin,
         clase: "evento " + (tramo.personas.length === 1 ? "ocupado-persona-" + tramo.personas[0].color : "ocupado-varios"),
-        avatares: tramo.personas.map(function (persona) {
-          return { texto: persona.iniciales, clase: "grilla-persona-" + persona.color };
-        }),
-        lineas: lineas,
-        titulo: detalle + " · " + horario,
+        filas: tramo.personas.map(function (persona) {
+          return { avatar: { texto: persona.iniciales, clase: "grilla-persona-" + persona.color }, texto: persona.titulo };
+        }).concat([{ texto: horario, clase: "grilla-fila-horario" }]),
+        titulo: tramo.personas.map(function (persona) {
+          return persona.nombre + ": " + (persona.titulo || "ocupado/a");
+        }).join("\n") + "\n" + horario,
       });
     });
 

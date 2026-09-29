@@ -619,6 +619,36 @@ strong.grilla-linea {
   font-weight: 700;
 }
 
+.grilla-fila {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+  margin-bottom: 3px;
+}
+
+.grilla-fila .grilla-avatar {
+  margin-right: 0;
+}
+
+.grilla-fila-texto {
+  display: -webkit-box;
+  overflow: hidden;
+  padding-top: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.2;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow-wrap: anywhere;
+}
+
+.grilla-fila-horario .grilla-fila-texto {
+  padding-top: 0;
+  color: var(--color-texto-suave);
+  font-weight: 400;
+}
+
 .grilla-ahora::before {
   content: "";
   position: absolute;
@@ -1132,6 +1162,22 @@ strong.grilla-linea {
   border-radius: 50%;
 }
 
+.categoria-opcion-deshabilitada .categoria-chip {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.campo-ayuda {
+  margin: 0;
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.campo-ayuda a {
+  color: var(--color-salvia-oscuro);
+  font-weight: 600;
+}
+
 .categoria-sin-color {
   background: #cfcac0;
 }
@@ -1264,6 +1310,10 @@ strong.grilla-linea {
 
 .tarjeta-ancha {
   max-width: 700px;
+}
+
+.tarjeta-con-grilla {
+  max-width: 960px;
 }
 
 .buscador {

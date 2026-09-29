@@ -23,8 +23,8 @@ disponibilidad = obtener_disponibilidad(
     hasta=date(2030, 9, 25),
 )
 print("\nDisponibilidad de juan el", FECHA_PRUEBA, "vista por Marina:")
-for inicio, fin in disponibilidad[7]:
-    print("Ocupado de", inicio, "a", fin)
+for bloque in disponibilidad[7]:
+    print("Ocupado de", bloque["inicio"], "a", bloque["fin"], bloque.get("titulo", ""))
 
 print("\nProbando con alguien que NO es amigo de Marina (deberia fallar):")
 try:

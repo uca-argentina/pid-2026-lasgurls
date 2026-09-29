@@ -1,0 +1,20 @@
+<div class="campo">
+  <span class="etiqueta">¿Qué ven tus amigos cuando buscan un horario?</span>
+  <div class="categorias">
+    <label class="categoria-opcion">
+      <input type="radio" name="visibilidad" value="ocupado"{% if request.form.get('visibilidad') not in ('detalle', 'oculto') or (request.form.get('visibilidad') == 'detalle' and not comparte_detalles) %} checked{% endif %}>
+      <span class="categoria-chip">Solo que estoy ocupado/a</span>
+    </label>
+    <label class="categoria-opcion{% if not comparte_detalles %} categoria-opcion-deshabilitada{% endif %}">
+      <input type="radio" name="visibilidad" value="detalle"{% if not comparte_detalles %} disabled{% elif request.form.get('visibilidad') == 'detalle' %} checked{% endif %}>
+      <span class="categoria-chip">Mostrar el título</span>
+    </label>
+    <label class="categoria-opcion">
+      <input type="radio" name="visibilidad" value="oculto"{% if request.form.get('visibilidad') == 'oculto' %} checked{% endif %}>
+      <span class="categoria-chip">No mostrar nada</span>
+    </label>
+  </div>
+  {% if not comparte_detalles %}
+  <p class="campo-ayuda">Para mostrar el título, activá «Compartir detalles» en <a href="{{ url_for('mostrar_perfil') }}">Mi perfil</a>.</p>
+  {% endif %}
+</div>

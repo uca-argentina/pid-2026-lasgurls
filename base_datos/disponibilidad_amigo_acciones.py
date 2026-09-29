@@ -49,10 +49,14 @@ def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
 
     ocupados = {usuario_id: [] for usuario_id in usuarios_ids}
     for usuario_id, fecha, hora_inicio, hora_fin, titulo, visibilidad in filas:
+        es_propio = usuario_id == usuario_solicitante_id
+        if visibilidad == "oculto" and not es_propio:
+            continue
+
         inicio, fin = rango_del_evento(fecha, hora_inicio, hora_fin)
         bloque = {"inicio": inicio, "fin": fin}
 
-        if visibilidad == "detalle" and autorizacion.get(usuario_id, True):
+        if es_propio or (visibilidad == "detalle" and autorizacion.get(usuario_id, True)):
             bloque["titulo"] = titulo
 
         ocupados[usuario_id].append(bloque)

@@ -100,7 +100,7 @@ def test_visibilidad_invalido():
             visibilidad="secreto",
             ahora=AHORA,
         )
-    assert str(error.value) == "La visibilidad tiene que ser : detalle, ocupado"
+    assert str(error.value) == "La visibilidad tiene que ser: detalle, ocupado u oculto"
     
 def test_visibilidad_cambia_a_detalle():
         datos=Juntada(
@@ -114,3 +114,21 @@ def test_visibilidad_cambia_a_detalle():
             ahora=AHORA,
         )
         assert datos.registrar_juntada()["visibilidad"] == "detalle"
+
+
+def test_no_puede_mostrar_el_titulo_sin_compartir_detalles():
+    with pytest.raises(ValueError) as error:
+        Juntada(2, "01/09/2026", "Asado", "13:00", "17:00", [1], ahora=AHORA, visibilidad="detalle", comparte_detalles=False)
+    assert str(error.value) == "Para mostrar el título activá «Compartir detalles» en Mi perfil"
+
+
+def test_sin_compartir_detalles_puede_mostrar_solo_ocupado():
+    juntada = Juntada(2, "01/09/2026", "Asado", "13:00", "17:00", [1], ahora=AHORA, visibilidad="ocupado", comparte_detalles=False)
+
+    assert juntada.registrar_juntada()["visibilidad"] == "ocupado"
+
+
+def test_juntada_oculta_es_valida_aunque_no_comparta_detalles():
+    juntada = Juntada(2, "01/09/2026", "Sorpresa", "13:00", "17:00", [1], ahora=AHORA, visibilidad="oculto", comparte_detalles=False)
+
+    assert juntada.registrar_juntada()["visibilidad"] == "oculto"

@@ -3,7 +3,7 @@
 {% block titulo %}Nuevo evento{% endblock %}
 
 {% block contenido %}
-<div class="tarjeta-formulario tarjeta-ancha">
+<div class="tarjeta-formulario tarjeta-ancha tarjeta-con-grilla">
   <div class="encabezado-tarjeta">
     <h2>Nuevo evento</h2>
     <div class="encabezado-acciones">
@@ -22,13 +22,7 @@
     </div>
 
     {% include "_elegir_categoria.html" %}
-    <div class="campo">
-      <label for="visibilidad">¿Qué ven tus amigos?</label>
-      <select id="visibilidad" name="visibilidad">
-        <option value="ocupado" {% if request.form.get('visibilidad', 'ocupado') == 'ocupado' %}selected{% endif %}>Solo que estoy ocupado</option>
-        <option value="detalle" {% if request.form.get('visibilidad') == 'detalle' %}selected{% endif %}>El título del evento</option>
-      </select>
-    </div>
+    {% include "_elegir_visibilidad.html" %}
 
     {% include "_horario_con_disponibilidad.html" %}
 

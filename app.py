@@ -15,7 +15,7 @@ from base_datos.credenciales import SECRET_KEY
 from amistad_acciones import enviarSolicitud, aceptarSolicitud, rechazarSolicitud, eliminarAmigo
 from base_datos.solicitud_acciones import obtenerRecibidas, obtener_amigos
 from base_datos.agenda_acciones import obtener_por_usuario as obtener_agenda_de_usuario
-from base_datos.agenda_acciones import guardar as guardar_agenda
+from base_datos.agenda_acciones import guardar as guardar_agenda, borrar_evento
 from base_datos.juntada_acciones import (
     guardar as guardar_juntada,
     obtener_organizadas,
@@ -250,9 +250,17 @@ def mostrar_calendario():
     eventos=[]
 
     for agenda,categoria,color in obtener_agenda_de_usuario(usuario_id,desde,hasta):
+        muestra_titulo=agenda.visibilidad=="detalle" and g.usuario.compartir_disponibilidad
+        if agenda.visibilidad=="oculto":
+            que_ven="Tus amigos no ven este evento."
+        elif muestra_titulo:
+            que_ven="Tus amigos ven el título."
+        else:
+            que_ven="Tus amigos solo ven que estás ocupado/a."
         eventos.append({
             "fecha":agenda.fecha,"titulo":agenda.titulo,"hora_inicio":agenda.hora_inicio,"hora_fin":agenda.hora_fin,
-            "tipo":"personal","detalle":"Solo lo ves vos.","juntada_id":None,"categoria":categoria,"color":color,
+            "tipo":"personal","juntada_id":None,"agenda_id":agenda.id,"categoria":categoria,"color":color,
+            "detalle":que_ven,
         })
 
     organizadas={}
@@ -357,6 +365,7 @@ def acciones_del_evento(evento,ahora):
         "cancelar":url_for("cancelar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
+        "borrar":url_for("borrar_evento_propio",evento_id=evento["agenda_id"]) if tipo=="personal" else None,
     }
 
 def volver_al_calendario():
@@ -402,6 +411,7 @@ def crear_agenda():
             hora_fin=request.form.get("hora_fin"),
             categoria_id=categoria_id,
             visibilidad=visibilidad,
+            comparte_detalles=g.usuario.compartir_disponibilidad,
         )
     except ValueError as error:
         return formulario_evento(fecha_parametro, error=str(error)), 400
@@ -416,7 +426,7 @@ def formulario_con_horario(plantilla,fecha_sugerida,duracion_inicial,error=None,
     return render_template(
         plantilla, fecha_sugerida=fecha_sugerida, error=error, duraciones=DURACIONES_JUNTADA,
         duracion_inicial=duracion_inicial, hora_desde=hora_desde, hora_hasta=hora_hasta,
-        hoy=date.today().isoformat(), **datos,
+        hoy=date.today().isoformat(), comparte_detalles=g.usuario.compartir_disponibilidad, **datos,
     )
 
 def formulario_juntada(amigos,fecha_sugerida,seleccionados,error=None,hora_desde="",hora_hasta=""):
@@ -469,6 +479,7 @@ def crear_juntada():
             amigos_invitados=invitados_ids,
             categoria_id=categoria_id,
             visibilidad=visibilidad,
+            comparte_detalles=g.usuario.compartir_disponibilidad,
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
@@ -480,6 +491,13 @@ def crear_juntada():
 @login_requerido
 def responder_juntada(juntada_id):
     responder_invitacion(juntada_id, session["usuarioID"], request.form.get("respuesta"))
+    return volver_al_calendario()
+
+@app.route("/agenda/<int:evento_id>/borrar",methods=["POST"])
+@login_requerido
+def borrar_evento_propio(evento_id):
+    if not borrar_evento(evento_id, session["usuarioID"]):
+        return "No se puede borrar este evento.", 400
     return volver_al_calendario()
 
 @app.route("/juntada/<int:juntada_id>/cancelar",methods=["POST"])

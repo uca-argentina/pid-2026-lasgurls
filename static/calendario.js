@@ -321,6 +321,11 @@
         "¿Seguro que querés cancelar «" + evento.titulo + "»? Se borra para todos los invitados y no se puede deshacer.",
         "Sí, cancelar juntada", evento.cancelar));
     }
+    if (evento.borrar) {
+      opciones.push(botonConConfirmacion(evento, "Borrar evento",
+        "¿Seguro que querés borrar «" + evento.titulo + "»? No se puede deshacer.",
+        "Sí, borrar evento", evento.borrar));
+    }
     if (evento.abandonar) {
       opciones.push(botonConConfirmacion(evento, "No voy a ir",
         "¿Te das de baja de «" + evento.titulo + "»? El organizador va a ver que ya no vas.",

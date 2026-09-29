@@ -72,7 +72,7 @@ def test_visibilidad_invalido():
             visibilidad="secreto",
             ahora=AHORA,
         )
-    assert str(error.value) == "La visibilidad tiene que ser : detalle, ocupado"
+    assert str(error.value) == "La visibilidad tiene que ser: detalle, ocupado u oculto"
     
 def test_visibilidad_cambia_a_detalle():
     datos = Agenda(
@@ -86,3 +86,18 @@ def test_visibilidad_cambia_a_detalle():
     )
 
     assert datos.registrar_agenda()["visibilidad"] == "detalle"
+
+def test_no_puede_mostrar_el_titulo_sin_compartir_detalles():
+    with pytest.raises(ValueError) as error:
+        Agenda(1, "01/09/2026", "Dentista", "13:00", "14:00", ahora=AHORA, visibilidad="detalle", comparte_detalles=False)
+    assert str(error.value) == "Para mostrar el título activá «Compartir detalles» en Mi perfil"
+
+def test_sin_compartir_detalles_puede_mostrar_solo_ocupado():
+    datos = Agenda(1, "01/09/2026", "Dentista", "13:00", "14:00", ahora=AHORA, visibilidad="ocupado", comparte_detalles=False)
+
+    assert datos.registrar_agenda()["visibilidad"] == "ocupado"
+
+def test_evento_oculto_es_valido_aunque_no_comparta_detalles():
+    datos = Agenda(1, "01/09/2026", "Terapia", "13:00", "14:00", ahora=AHORA, visibilidad="oculto", comparte_detalles=False)
+
+    assert datos.registrar_agenda()["visibilidad"] == "oculto"
