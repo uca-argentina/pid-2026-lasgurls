@@ -654,7 +654,7 @@ def consultar_disponibilidad():
         "yo":session["usuarioID"],
         "titulo":titulo_semana(lunes),
         "desde":a_texto(desde),
-        "ocupados":{usuario_id:[[a_texto(bloque["inicio"]),a_texto(bloque["fin"])] for bloque in bloques] for usuario_id,bloques in ocupados.items()},
+        "ocupados":{usuario_id:[[a_texto(bloque["inicio"]),a_texto(bloque["fin"]),bloque.get("titulo")] for bloque in bloques] for usuario_id,bloques in ocupados.items()},
         "dias":[{
             "fecha":dia.isoformat(),
             "titulo":DIAS_SEMANA[dia.weekday()].capitalize(),
