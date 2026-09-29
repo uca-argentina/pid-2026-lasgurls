@@ -17,6 +17,7 @@ def guardar(juntada):
             hora_inicio=juntada.hora_inicio,
             hora_fin=juntada.hora_fin,
             categoria_id=juntada.categoria_id,
+            visibilidad=juntada.visibilidad,
         )
         sesion.add(juntada_tabla)
         sesion.flush()
