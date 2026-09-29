@@ -4,6 +4,7 @@ from base_datos.configuracion import Session
 from base_datos.agenda_tabla import AgendaTabla
 from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
+from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.solicitud_acciones import obtener_amigos_de_usuario
 from dominio.modulo_utilidades.rango_horario import rango_del_evento
 
@@ -16,15 +17,20 @@ def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
     fechas = (desde - timedelta(days=1), hasta)
 
     agenda = select(
-        AgendaTabla.usuario_id, AgendaTabla.fecha, AgendaTabla.hora_inicio, AgendaTabla.hora_fin
+        AgendaTabla.usuario_id, AgendaTabla.fecha, AgendaTabla.hora_inicio, AgendaTabla.hora_fin,
+        AgendaTabla.titulo, AgendaTabla.visibilidad,
     ).where(AgendaTabla.usuario_id.in_(usuarios_ids), AgendaTabla.fecha.between(*fechas))
 
     organizadas = select(
-        JuntadaTabla.organizador_id, JuntadaTabla.fecha, JuntadaTabla.hora_inicio, JuntadaTabla.hora_fin
+        JuntadaTabla.organizador_id, JuntadaTabla.fecha, JuntadaTabla.hora_inicio, JuntadaTabla.hora_fin,
+        JuntadaTabla.titulo, JuntadaTabla.visibilidad,
     ).where(JuntadaTabla.organizador_id.in_(usuarios_ids), JuntadaTabla.fecha.between(*fechas))
 
     confirmadas = (
-        select(JuntadaInvitadosTabla.usuario_id, JuntadaTabla.fecha, JuntadaTabla.hora_inicio, JuntadaTabla.hora_fin)
+        select(
+            JuntadaInvitadosTabla.usuario_id, JuntadaTabla.fecha, JuntadaTabla.hora_inicio, JuntadaTabla.hora_fin,
+            JuntadaTabla.titulo, JuntadaTabla.visibilidad,
+        )
         .join(JuntadaTabla, JuntadaTabla.id == JuntadaInvitadosTabla.juntada_id)
         .where(
             JuntadaInvitadosTabla.usuario_id.in_(usuarios_ids),
@@ -36,7 +42,19 @@ def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
     with Session() as sesion:
         filas = sesion.execute(union_all(agenda, organizadas, confirmadas)).all()
 
+        consulta_autorizacion = select(UsuarioTabla.id, UsuarioTabla.compartir_disponibilidad).where(
+            UsuarioTabla.id.in_(usuarios_ids)
+        )
+        autorizacion = dict(sesion.execute(consulta_autorizacion).all())
+
     ocupados = {usuario_id: [] for usuario_id in usuarios_ids}
-    for usuario_id, fecha, hora_inicio, hora_fin in filas:
-        ocupados[usuario_id].append(rango_del_evento(fecha, hora_inicio, hora_fin))
+    for usuario_id, fecha, hora_inicio, hora_fin, titulo, visibilidad in filas:
+        inicio, fin = rango_del_evento(fecha, hora_inicio, hora_fin)
+        bloque = {"inicio": inicio, "fin": fin}
+
+        if visibilidad == "detalle" and autorizacion.get(usuario_id, True):
+            bloque["titulo"] = titulo
+
+        ocupados[usuario_id].append(bloque)
+
     return ocupados

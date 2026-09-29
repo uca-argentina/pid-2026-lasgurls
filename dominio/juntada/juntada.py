@@ -4,7 +4,7 @@ from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEv
 
 
 class Juntada:
-    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None):
+    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None, visibilidad="ocupado"):
         self.organizador = organizador
         self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
@@ -12,6 +12,7 @@ class Juntada:
         self.hora_fin = parsear_hora(hora_fin, "hora de finalización")
         self.titulo_juntada = titulo_juntada
         self.amigos_invitados = amigos_invitados
+        self.visibilidad= visibilidad
 
         self.validar_juntada()
         self.validar_amigos_invitados()
@@ -24,6 +25,7 @@ class Juntada:
             hora_fin=self.hora_fin,
             titulo=self.titulo_juntada,
             responsable=self.organizador,
+            visibilidad=self.visibilidad,
         )
 
     def validar_amigos_invitados(self):
@@ -41,4 +43,5 @@ class Juntada:
             "hora_inicio": self.hora_inicio.isoformat(),
             "hora_fin": self.hora_fin.isoformat(),
             "amigos_invitados": self.amigos_invitados,
+            "visibilidad": self.visibilidad,
         }

@@ -9,7 +9,7 @@ from dominio.juntada.juntada import Juntada
 from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
-from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja
+from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.credenciales import SECRET_KEY
 from amistad_acciones import enviarSolicitud, aceptarSolicitud, rechazarSolicitud, eliminarAmigo
@@ -32,6 +32,7 @@ from base_datos.categoria_acciones import obtener_categorias, crear_categoria, b
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
 from dominio.disponibilidad.buscador_huecos import buscar_huecos, huecos_del_dia, proxima_media_hora
+
 
 NOMBRES_MES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -174,11 +175,14 @@ def logout():
     session.clear()
     return redirect(url_for("mostrar_login"))
 
-def pagina_perfil(nombre,email,error,guardado):
+def pagina_perfil(nombre, email, error, guardado, compartir_disponibilidad):
     return render_template(
-        "perfil.html",nombre=nombre,email=email,error=error,guardado=guardado,
-        categorias=obtener_categorias(g.usuario.id),colores=COLORES,
+        "perfil.html", nombre=nombre, email=email, error=error, guardado=guardado,
+        categorias=obtener_categorias(g.usuario.id), colores=COLORES,
+        compartir_disponibilidad=compartir_disponibilidad,
     )
+    
+
 
 @app.route("/perfil",methods=["GET","POST"])
 @login_requerido
@@ -196,8 +200,10 @@ def mostrar_perfil():
         if not secrets.compare_digest(request.form.get("token",""),session["perfil_token"]):
             return "El formulario venció. Recargá la página e intentá nuevamente.",400
         nombre=request.form.get("nombre","")
+        compartir_disponibilidad = "compartir_disponibilidad" in request.form
         try:
             actualizar_perfil(session["usuarioID"],nombre)
+            actualizar_compartir_disponibilidad(session["usuarioID"],compartir_disponibilidad)
         except ValueError as problema:
             error=str(problema)
             estado=400
@@ -206,7 +212,7 @@ def mostrar_perfil():
             return redirect(url_for("mostrar_perfil"))
 
     guardado=session.pop("perfil_guardado",False)
-    return pagina_perfil(nombre,email,error,guardado),estado
+    return pagina_perfil(nombre, email, error, guardado, usuario.compartir_disponibilidad), estado
 
 @app.route("/perfil/baja",methods=["POST"])
 @login_requerido
@@ -220,7 +226,7 @@ def baja_cuenta():
             raise ValueError("Confirmá que querés dar de baja tu cuenta")
         dar_de_baja(session["usuarioID"],request.form.get("password",""))
     except ValueError as error:
-        return pagina_perfil(usuario.nombre,usuario.email,str(error),False),400
+        return pagina_perfil(usuario.nombre,usuario.email,str(error),False,usuario.compartir_disponibilidad),400
     session.clear()
     return redirect(url_for("mostrar_login",baja="1"))
 
@@ -376,27 +382,29 @@ def formulario_evento(fecha_sugerida,error=None,hora_desde="",hora_hasta=""):
         categorias=obtener_categorias(g.usuario.id),colores=COLORES,
     )
 
-@app.route("/agenda/nueva",methods=["POST"])
+@app.route("/agenda/nueva", methods=["POST"])
 @login_requerido
 def crear_agenda():
-    usuario_id=session["usuarioID"]
-    fecha_parametro=request.form.get("fecha","")
-    categoria_id=request.form.get("categoria",type=int)
+    usuario_id = session["usuarioID"]
+    fecha_parametro = request.form.get("fecha", "")
+    categoria_id = request.form.get("categoria", type=int)
+    visibilidad = request.form.get("visibilidad", "ocupado")
 
     try:
-        if categoria_id is not None and not puede_usar_categoria(categoria_id,usuario_id):
+        if categoria_id is not None and not puede_usar_categoria(categoria_id, usuario_id):
             raise ValueError("Elegí una categoría válida")
-        fecha_formateada=datetime.strptime(fecha_parametro, "%Y-%m-%d").strftime("%d/%m/%Y")
-        agenda=Agenda(
+        fecha_formateada = datetime.strptime(fecha_parametro, "%Y-%m-%d").strftime("%d/%m/%Y")
+        agenda = Agenda(
             usuario_id=usuario_id,
             fecha=fecha_formateada,
             titulo_reunion=request.form.get("titulo"),
             hora_inicio=request.form.get("hora_inicio"),
             hora_fin=request.form.get("hora_fin"),
             categoria_id=categoria_id,
+            visibilidad=visibilidad,
         )
     except ValueError as error:
-        return formulario_evento(fecha_parametro,error=str(error)), 400
+        return formulario_evento(fecha_parametro, error=str(error)), 400
 
     guardar_agenda(agenda)
     return redirect(url_for("mostrar_calendario", fecha=fecha_parametro))
@@ -440,6 +448,8 @@ def crear_juntada():
     invitados_ids=[int(id) for id in request.form.getlist("invitados")]
     amigos=obtener_amigos(usuario_id)
     amigos_ids=[amigo.id for amigo in amigos]
+    visibilidad = request.form.get("visibilidad", "ocupado")
+
 
     if not set(invitados_ids).issubset(set(amigos_ids)):
         seleccionados=[id for id in invitados_ids if id in amigos_ids]
@@ -458,6 +468,7 @@ def crear_juntada():
             hora_fin=request.form.get("hora_fin"),
             amigos_invitados=invitados_ids,
             categoria_id=categoria_id,
+            visibilidad=visibilidad,
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
@@ -635,7 +646,7 @@ def consultar_disponibilidad():
     except ValueError as error:
         return {"error":str(error)},403
 
-    todos=[bloque for bloques in ocupados.values() for bloque in bloques]
+    todos=[(bloque["inicio"],bloque["fin"]) for bloques in ocupados.values() for bloque in bloques]
     desde=max(inicio,proxima_media_hora(datetime.now()))
     huecos=buscar_huecos(todos,desde,fin,duracion)
 
@@ -643,7 +654,7 @@ def consultar_disponibilidad():
         "yo":session["usuarioID"],
         "titulo":titulo_semana(lunes),
         "desde":a_texto(desde),
-        "ocupados":{usuario_id:[[a_texto(inicio),a_texto(fin)] for inicio,fin in bloques] for usuario_id,bloques in ocupados.items()},
+        "ocupados":{usuario_id:[[a_texto(bloque["inicio"]),a_texto(bloque["fin"])] for bloque in bloques] for usuario_id,bloques in ocupados.items()},
         "dias":[{
             "fecha":dia.isoformat(),
             "titulo":DIAS_SEMANA[dia.weekday()].capitalize(),

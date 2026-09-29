@@ -12,3 +12,4 @@ class UsuarioTabla(Base):
     password = Column(String(255), nullable=False)
     nombre = Column(String(255), nullable=False)
     activo=Column(Boolean,nullable=False,default=True,server_default=true())
+    compartir_disponibilidad= Column (Boolean, nullable=False, default=True, server_default=true())
