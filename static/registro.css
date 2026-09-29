@@ -514,7 +514,7 @@ body {
 }
 
 .tarjeta-calendario {
-  max-width: 1120px;
+  max-width: 1280px;
 }
 
 .calendario-barra {
@@ -1318,7 +1318,7 @@ strong.grilla-linea {
 }
 
 .tarjeta-con-grilla {
-  max-width: 960px;
+  max-width: 1120px;
 }
 
 .buscador {
@@ -1604,10 +1604,10 @@ strong.grilla-linea {
 }
 
 .grilla {
-  --alto-hora: 46px;
+  --alto-hora: 54px;
   --ancho-horas: 46px;
-  max-height: 600px;
-  overflow-y: auto;
+  max-height: 640px;
+  overflow: auto;
   border: 1px solid var(--color-borde);
   background: var(--color-tarjeta);
 }
@@ -1651,6 +1651,21 @@ strong.grilla-linea {
 .grilla-columna {
   position: relative;
   height: calc(24 * var(--alto-hora));
+}
+
+.grilla-horas,
+.grilla-esquina {
+  position: sticky;
+  left: 0;
+  background: var(--color-tarjeta);
+}
+
+.grilla-horas {
+  z-index: 3;
+}
+
+.grilla-esquina {
+  z-index: 4;
 }
 
 .grilla-horas span {

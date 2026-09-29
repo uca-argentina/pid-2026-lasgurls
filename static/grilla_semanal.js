@@ -1,5 +1,6 @@
 window.GrillaSemanal = (function () {
   var UN_DIA = 24 * 60 * 60 * 1000;
+  var ANCHO_MINIMO_POR_CARRIL = 90;
 
   function crear(etiqueta, clase, texto) {
     var elemento = document.createElement(etiqueta);
@@ -99,6 +100,30 @@ window.GrillaSemanal = (function () {
     });
   }
 
+  function carrilesPorDia(dias, bloques) {
+    var maximos = {};
+    dias.forEach(function (dia) {
+      maximos[dia.fecha] = 1;
+    });
+    bloques.forEach(function (bloque) {
+      if (!bloque.ancho || bloque.ancho >= 100) return;
+      var carriles = Math.round(100 / bloque.ancho);
+      [fechaIso(bloque.inicio), fechaIso(new Date(bloque.fin.getTime() - 1))].forEach(function (fecha) {
+        if (maximos[fecha] !== undefined) maximos[fecha] = Math.max(maximos[fecha], carriles);
+      });
+    });
+    return dias.map(function (dia) {
+      return maximos[dia.fecha];
+    });
+  }
+
+  function columnasSegunCarriles(carriles) {
+    return carriles.map(function (cantidad) {
+      var minimo = cantidad > 1 ? cantidad * ANCHO_MINIMO_POR_CARRIL + "px" : "0";
+      return "minmax(" + minimo + ", " + cantidad + "fr)";
+    }).join(" ");
+  }
+
   function dibujar(contenedor, opciones) {
     var desplazamiento = contenedor.scrollTop;
     var ahora = new Date();
@@ -135,7 +160,7 @@ window.GrillaSemanal = (function () {
     });
 
     contenedor.replaceChildren(tabla);
-    tabla.style.gridTemplateColumns = "var(--ancho-horas) repeat(" + opciones.dias.length + ", 1fr)";
+    tabla.style.gridTemplateColumns = "var(--ancho-horas) " + columnasSegunCarriles(carrilesPorDia(opciones.dias, opciones.bloques));
     contenedor.scrollTop = opciones.hora === undefined
       ? desplazamiento
       : (opciones.hora / 24) * tabla.querySelector(".grilla-columna").offsetHeight;
