@@ -6,6 +6,7 @@ import calendar as modulo_calendario
 from flask import Flask, request, render_template, session, redirect, url_for, g
 from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
+from dominio.juntada.recurrencia import Recurrencia, un_anio_despues, texto_de_repeticion
 from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
@@ -122,6 +123,7 @@ def datos_del_header():
         if invitacion.estado in ("Pendiente","Tal vez") and juntada.fecha>=hoy
     ]
     invitaciones.sort(key=lambda item: (item["juntada"].fecha, item["juntada"].hora_inicio))
+    invitaciones=agrupar_por_serie(invitaciones)
 
     solicitudes=solicitudes_recibidas()
     pendientes=len(solicitudes)+sum(1 for item in invitaciones if item["estado"]=="Pendiente")
@@ -132,6 +134,22 @@ def datos_del_header():
         "notificaciones_amistad":solicitudes,
         "notificaciones_pendientes":pendientes,
     }
+
+def agrupar_por_serie(invitaciones):
+    agrupadas=[]
+    por_serie={}
+    for item in invitaciones:
+        serie_id=item["juntada"].serie_id
+        clave=(serie_id,item["estado"])
+        if serie_id is not None and clave in por_serie:
+            por_serie[clave]["fechas"]+=1
+            continue
+        item["fechas"]=1
+        item["repeticion"]=texto_de_repeticion(item["juntada"].repeticion,item["juntada"].fecha)
+        if serie_id is not None:
+            por_serie[clave]=item
+        agrupadas.append(item)
+    return agrupadas
 
 @app.route("/registro", methods=["POST"])
 def registro():
@@ -269,7 +287,7 @@ def mostrar_calendario():
         confirmados=sum(1 for _,estado in invitados if estado=="Si")
         eventos.append({
             "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
-            "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron",
+            "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(g.usuario.nombre,"organiza",es_vos=True)]+[persona(nombre,estado) for nombre,estado in invitados],
         })
@@ -286,7 +304,7 @@ def mostrar_calendario():
         eventos.append({
             "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
             "tipo":{"Si":"confirmada","Tal vez":"tal_vez"}.get(invitacion.estado,"pendiente"),
-            "detalle":f"Te invitó {organizador} · {respuesta}",
+            "detalle":f"Te invitó {organizador} · {respuesta}"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(organizador,"organiza")]+invitados_por_juntada.get(juntada.id,[]),
         })
@@ -345,6 +363,10 @@ def mostrar_calendario():
         nombre_mes=NOMBRES_MES[fecha_seleccionada.month],
         dias_semana=DIAS_SEMANA,
     )
+
+def texto_repeticion(juntada):
+    texto=texto_de_repeticion(juntada.repeticion,juntada.fecha)
+    return f" · {texto}" if texto else ""
 
 def persona(nombre,estado,es_vos=False):
     return {"nombre":"Vos" if es_vos else nombre,"iniciales":iniciales(nombre),"estado":estado}
@@ -429,6 +451,11 @@ def formulario_juntada(amigos,fecha_sugerida,seleccionados,error=None,hora_desde
         grupos=[(grupo,miembros) for grupo,miembros in obtenerGrupos(g.usuario.id) if miembros],
     )
 
+def recurrencia_del_formulario(fecha):
+    if request.form.get("repetir")!="semanal":
+        return None
+    return Recurrencia("semanal",un_anio_despues(fecha).strftime("%d/%m/%Y"))
+
 @app.route("/juntada/nueva",methods=["GET"])
 @login_requerido
 def mostrar_nueva_juntada():
@@ -472,6 +499,7 @@ def crear_juntada():
             categoria_id=categoria_id,
             visibilidad=visibilidad,
             comparte_detalles=g.usuario.compartir_disponibilidad,
+            recurrencia=recurrencia_del_formulario(datetime.strptime(fecha_parametro, "%Y-%m-%d").date()),
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
@@ -482,7 +510,7 @@ def crear_juntada():
 @app.route("/juntada/<int:juntada_id>/responder",methods=["POST"])
 @login_requerido
 def responder_juntada(juntada_id):
-    responder_invitacion(juntada_id, session["usuarioID"], request.form.get("respuesta"))
+    responder_invitacion(juntada_id, session["usuarioID"], request.form.get("respuesta"), request.form.get("serie")=="1")
     return volver_al_calendario()
 
 @app.route("/agenda/<int:evento_id>/borrar",methods=["POST"])
@@ -671,4 +699,4 @@ def consultar_disponibilidad():
     }
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5001)
+    app.run(debug=True, host="0.0.0.0", port=5001)

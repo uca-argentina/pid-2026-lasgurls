@@ -1,0 +1,13 @@
+<label class="opcion-repetir" data-repeticion>
+  <input type="checkbox" name="repetir" value="semanal"{% if request.form.get('repetir') %} checked{% endif %}>
+  <span class="opcion-repetir-texto">
+    <span class="opcion-repetir-titulo" data-repeticion-titulo>Se repite todas las semanas</span>
+    <span class="opcion-repetir-detalle" data-repeticion-detalle>El mismo día y horario, durante un año.</span>
+  </span>
+  <svg class="opcion-repetir-icono" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M17 2l4 4-4 4"/>
+    <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+    <path d="M7 22l-4-4 4-4"/>
+    <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+  </svg>
+</label>

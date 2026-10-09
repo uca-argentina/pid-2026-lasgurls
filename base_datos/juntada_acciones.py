@@ -9,30 +9,38 @@ from dominio.modulo_utilidades.rango_horario import ya_empezo
 
 
 def guardar(juntada):
+    repeticion = juntada.recurrencia.frecuencia if juntada.recurrencia else None
     with Session() as sesion:
-        juntada_tabla = JuntadaTabla(
-            organizador_id=juntada.organizador,
-            titulo=juntada.titulo_juntada,
-            fecha=juntada.fecha,
-            hora_inicio=juntada.hora_inicio,
-            hora_fin=juntada.hora_fin,
-            categoria_id=juntada.categoria_id,
-            visibilidad=juntada.visibilidad,
-        )
-        sesion.add(juntada_tabla)
+        filas = []
+        for fecha in juntada.fechas:
+            juntada_tabla = JuntadaTabla(
+                organizador_id=juntada.organizador,
+                titulo=juntada.titulo_juntada,
+                fecha=fecha,
+                hora_inicio=juntada.hora_inicio,
+                hora_fin=juntada.hora_fin,
+                categoria_id=juntada.categoria_id,
+                visibilidad=juntada.visibilidad,
+                repeticion=repeticion,
+            )
+            sesion.add(juntada_tabla)
+            filas.append(juntada_tabla)
         sesion.flush()
 
-        for usuario_id in juntada.amigos_invitados:
-            invitado = JuntadaInvitadosTabla(
-                juntada_id=juntada_tabla.id,
-                usuario_id=usuario_id,
-                estado="Pendiente",
-            )
-            sesion.add(invitado)
+        for juntada_tabla in filas:
+            if repeticion:
+                juntada_tabla.serie_id = filas[0].id
+            for usuario_id in juntada.amigos_invitados:
+                invitado = JuntadaInvitadosTabla(
+                    juntada_id=juntada_tabla.id,
+                    usuario_id=usuario_id,
+                    estado="Pendiente",
+                )
+                sesion.add(invitado)
 
         sesion.commit()
 
-        return juntada_tabla.id
+        return filas[0].id
 
 def obtener_por_id(juntada_id):
     with Session() as sesion:
@@ -52,15 +60,16 @@ def obtener_invitados_de_juntada(juntada_id):
         )
         return sesion.scalars(consulta).all()
 
-def responder_invitacion(juntada_id, usuario_id, nueva_respuesta):
+def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, toda_la_serie=False):
     if nueva_respuesta not in ("Si", "No", "Tal vez"):
         return False
 
     with Session() as sesion:
+        juntadas_ids = _juntadas_de_la_serie(sesion, juntada_id) if toda_la_serie else [juntada_id]
         consulta = (
             update(JuntadaInvitadosTabla)
             .where(
-                (JuntadaInvitadosTabla.juntada_id == juntada_id) &
+                (JuntadaInvitadosTabla.juntada_id.in_(juntadas_ids)) &
                 (JuntadaInvitadosTabla.usuario_id == usuario_id) &
                 (JuntadaInvitadosTabla.estado.in_(["Tal vez","Pendiente"]))
             )
@@ -69,12 +78,21 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta):
 
         resultado = sesion.execute(consulta)
 
-        if resultado.rowcount == 1 and nueva_respuesta == "No":
-            _borrar_si_todos_rechazaron(sesion, juntada_id)
+        if resultado.rowcount > 0 and nueva_respuesta == "No":
+            for id in juntadas_ids:
+                _borrar_si_todos_rechazaron(sesion, id)
 
         sesion.commit()
 
-        return resultado.rowcount == 1
+        return resultado.rowcount > 0
+
+
+def _juntadas_de_la_serie(sesion, juntada_id):
+    juntada = sesion.get(JuntadaTabla, juntada_id)
+    if juntada is None or juntada.serie_id is None:
+        return [juntada_id]
+    consulta = select(JuntadaTabla.id).where(JuntadaTabla.serie_id == juntada.serie_id)
+    return sesion.scalars(consulta).all()
 
 
 def cancelar_juntada(juntada_id, organizador_id, ahora):

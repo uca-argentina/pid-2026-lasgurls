@@ -55,6 +55,7 @@
     </div>
 
     {% include "_horario_con_disponibilidad.html" %}
+    {% include "_elegir_repeticion.html" %}
 
     <button type="submit" class="boton-enviar">Crear juntada</button>
   </form>
@@ -66,4 +67,5 @@
 <script src="{{ url_for('static', filename='disponibilidad.js') }}" defer></script>
 <script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
 <script src="{{ url_for('static', filename='grupos.js') }}" defer></script>
+<script src="{{ url_for('static', filename='repeticion.js') }}" defer></script>
 {% endblock %}

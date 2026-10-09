@@ -1048,6 +1048,61 @@ strong.grilla-linea {
   cursor: pointer;
 }
 
+.opcion-repetir {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-borde);
+  background: #fbfaf7;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.opcion-repetir:hover {
+  border-color: var(--color-texto-suave);
+}
+
+.opcion-repetir:has(input:checked) {
+  border-color: var(--color-salvia);
+  background: #f1f4ef;
+}
+
+.opcion-repetir input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.opcion-repetir-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.opcion-repetir-titulo {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.opcion-repetir-detalle {
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+}
+
+.opcion-repetir-icono {
+  flex-shrink: 0;
+  color: var(--color-texto-suave);
+}
+
+.opcion-repetir:has(input:checked) .opcion-repetir-icono {
+  color: var(--color-salvia-oscuro);
+}
+
 .campo-invalido input,
 .campo-invalido select {
   border-color: var(--color-error);
