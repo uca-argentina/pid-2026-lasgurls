@@ -344,7 +344,14 @@
       reprogramar.href = evento.reprogramar;
       opciones.push(reprogramar);
     }
-    if (evento.cancelar) {
+    if (evento.cancelar && evento.cancelar_serie) {
+      opciones.push(botonConConfirmacion(evento, "Cancelar esta fecha",
+        "¿Cancelás solo la juntada de " + evento.cuando + "? Las demás fechas de la serie siguen igual.",
+        "Sí, cancelar esta fecha", evento.cancelar));
+      opciones.push(botonConConfirmacion(evento, "Cancelar toda la serie",
+        "¿Cancelás todas las fechas que quedan de «" + evento.titulo + "»? Se borran para todos los invitados y no se puede deshacer.",
+        "Sí, cancelar la serie", evento.cancelar_serie));
+    } else if (evento.cancelar) {
       opciones.push(botonConConfirmacion(evento, "Cancelar juntada",
         "¿Seguro que querés cancelar «" + evento.titulo + "»? Se borra para todos los invitados y no se puede deshacer.",
         "Sí, cancelar juntada", evento.cancelar));

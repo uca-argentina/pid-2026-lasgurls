@@ -123,6 +123,27 @@ def cancelar_juntada(juntada_id, organizador_id, ahora):
         return True
 
 
+def cancelar_serie(juntada_id, organizador_id, ahora):
+    with Session() as sesion:
+        juntada = sesion.get(JuntadaTabla, juntada_id)
+        if juntada is None or juntada.organizador_id != organizador_id or juntada.serie_id is None or ya_empezo(juntada.fecha, juntada.hora_inicio, ahora):
+            return False
+        consulta = select(JuntadaTabla).where(JuntadaTabla.serie_id == juntada.serie_id)
+        juntadas_ids = [fila.id for fila in sesion.scalars(consulta).all() if not ya_empezo(fila.fecha, fila.hora_inicio, ahora)]
+
+        consulta = select(JuntadaInvitadosTabla.usuario_id).where(
+            JuntadaInvitadosTabla.juntada_id.in_(juntadas_ids),
+            JuntadaInvitadosTabla.estado != "No",
+        )
+        repeticion = texto_de_repeticion(juntada.repeticion, juntada.fecha) or "la serie"
+        texto = f"{nombre_de_usuario(sesion, organizador_id)} canceló todas las fechas de {resaltar(juntada.titulo)} ({repeticion.lower()})"
+        notificar(sesion, sesion.scalars(consulta).all(), "cancelacion", texto, ahora)
+        for id in juntadas_ids:
+            _borrar_juntada(sesion, id)
+        sesion.commit()
+        return True
+
+
 def reprogramar_juntada(juntada_id, organizador_id, reprogramacion, ahora):
     with Session() as sesion:
         juntada = sesion.get(JuntadaTabla, juntada_id)
