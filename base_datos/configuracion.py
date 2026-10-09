@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from base_datos.credenciales import HOST, PUERTO, USUARIO, PASSWORD, BASE
+from base_datos.secretos import HOST, PUERTO, USUARIO, PASSWORD, BASE
 
 DATABASE_URL = f"mysql+pymysql://{USUARIO}:{PASSWORD}@{HOST}:{PUERTO}/{BASE}?ssl_ca=ca.pem"
 

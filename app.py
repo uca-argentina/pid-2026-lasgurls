@@ -13,7 +13,7 @@ from dominio.comentario import Comentario
 from dominio.grupo import Grupo
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
-from base_datos.credenciales import SECRET_KEY
+from base_datos.secretos import SECRET_KEY
 from amistad_acciones import enviarSolicitud, aceptarSolicitud, rechazarSolicitud, eliminarAmigo
 from base_datos.solicitud_acciones import obtenerRecibidas, obtener_amigos
 from base_datos.agenda_acciones import obtener_por_usuario as obtener_agenda_de_usuario
