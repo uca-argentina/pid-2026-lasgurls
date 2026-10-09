@@ -686,6 +686,35 @@ strong.grilla-linea {
   gap: 8px;
 }
 
+.leyenda-filtro {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+  margin: -3px -8px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.leyenda-filtro:hover {
+  background: var(--color-borde);
+}
+
+.leyenda-filtro[aria-pressed="true"] {
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.leyenda-filtro-apagada {
+  opacity: 0.45;
+}
+
 .leyenda-calendario i,
 .detalle-tipo i {
   display: inline-block;

@@ -15,6 +15,7 @@
   };
   var MAXIMO_AVATARES = 3;
   var datos = null;
+  var filtros = { categoria: {}, tipo: {} };
 
   var crear = GrillaSemanal.crear;
   var textoHora = GrillaSemanal.textoHora;
@@ -69,9 +70,29 @@
       : datos.dias;
   }
 
+  function nombreDeCategoria(evento) {
+    if (!evento.categoria && evento.tipo !== "personal") return null;
+    return evento.categoria || "Sin categoría";
+  }
+
+  var GRUPOS = {
+    categoria: { selector: "[data-leyenda-categorias]", valor: nombreDeCategoria },
+    tipo: {
+      selector: "[data-leyenda-tipos]",
+      valor: function (evento) { return ETIQUETAS[evento.tipo] ? evento.tipo : null; },
+    },
+  };
+
+  function pasaElFiltro(evento) {
+    return Object.keys(GRUPOS).every(function (grupo) {
+      var elegidos = filtros[grupo];
+      return Object.keys(elegidos).length === 0 || GRUPOS[grupo].valor(evento) in elegidos;
+    });
+  }
+
   function horaInicial() {
     var visibles = diasVisibles().map(function (dia) { return dia.fecha; });
-    var horas = datos.eventos.filter(function (evento) {
+    var horas = datos.eventos.filter(pasaElFiltro).filter(function (evento) {
       return visibles.indexOf(evento.inicio.slice(0, 10)) !== -1;
     }).map(function (evento) {
       return new Date(evento.inicio).getHours();
@@ -85,28 +106,61 @@
     return circulo;
   }
 
-  function dibujarLeyendaDeCategorias() {
-    var leyenda = document.querySelector("[data-leyenda-categorias]");
-    var vistas = {};
+  function opcionesDelGrupo(grupo) {
+    var opciones = {};
     datos.eventos.forEach(function (evento) {
-      if (!evento.categoria && evento.tipo !== "personal") return;
-      var nombre = evento.categoria || "Sin categoría";
-      if (vistas[nombre]) return;
-      vistas[nombre] = true;
-      var item = crear("li", "", nombre);
-      item.prepend(circuloDeCategoria(evento));
+      var valor = GRUPOS[grupo].valor(evento);
+      if (valor && !opciones[valor]) opciones[valor] = evento;
+    });
+    return opciones;
+  }
+
+  function dibujarLeyenda(grupo) {
+    var leyenda = document.querySelector(GRUPOS[grupo].selector);
+    var opciones = opcionesDelGrupo(grupo);
+    var elegidos = filtros[grupo];
+    Object.keys(elegidos).forEach(function (valor) {
+      if (!opciones[valor]) delete elegidos[valor];
+    });
+    var hayElegidos = Object.keys(elegidos).length > 0;
+
+    leyenda.replaceChildren();
+    Object.keys(opciones).forEach(function (valor) {
+      var elegido = valor in elegidos;
+      var evento = opciones[valor];
+      var texto = grupo === "tipo" ? ETIQUETAS[valor] : valor;
+      var boton = crear("button", "leyenda-filtro" + (hayElegidos && !elegido ? " leyenda-filtro-apagada" : ""), texto);
+      boton.type = "button";
+      boton.dataset.filtroGrupo = grupo;
+      boton.dataset.filtroValor = valor;
+      boton.setAttribute("aria-pressed", String(elegido));
+      boton.prepend(grupo === "tipo" ? crear("i", "evento-" + valor) : circuloDeCategoria(evento));
+      var item = crear("li");
+      item.appendChild(boton);
       leyenda.appendChild(item);
     });
   }
 
+  document.addEventListener("click", function (evento) {
+    var boton = evento.target.closest("[data-filtro-grupo]");
+    if (!boton || !datos) return;
+    var elegidos = filtros[boton.dataset.filtroGrupo];
+    var valor = boton.dataset.filtroValor;
+    if (valor in elegidos) delete elegidos[valor];
+    else elegidos[valor] = true;
+    dibujar(false);
+  });
+
   function dibujar(ubicar) {
     var contenedor = document.querySelector("[data-grilla-calendario]");
     if (!contenedor) return;
-    document.querySelector("[data-leyenda-categorias]").replaceChildren();
-    dibujarLeyendaDeCategorias();
+    dibujarLeyenda("categoria");
+    dibujarLeyenda("tipo");
 
     var eventos = datos.eventos.map(function (evento, indice) {
       return { inicio: new Date(evento.inicio).getTime(), fin: new Date(evento.fin).getTime(), indice: indice };
+    }).filter(function (posicion) {
+      return pasaElFiltro(datos.eventos[posicion.indice]);
     });
     GrillaSemanal.asignarCarriles(eventos);
 
