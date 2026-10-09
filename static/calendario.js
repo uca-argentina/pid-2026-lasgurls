@@ -339,6 +339,11 @@
         });
     }
     var opciones=[];
+    if (evento.reprogramar) {
+      var reprogramar = crear("a", "dialogo-menu-opcion dialogo-menu-opcion-neutra", "Reprogramar");
+      reprogramar.href = evento.reprogramar;
+      opciones.push(reprogramar);
+    }
     if (evento.cancelar) {
       opciones.push(botonConConfirmacion(evento, "Cancelar juntada",
         "¿Seguro que querés cancelar «" + evento.titulo + "»? Se borra para todos los invitados y no se puede deshacer.",

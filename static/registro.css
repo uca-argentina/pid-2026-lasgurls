@@ -349,6 +349,16 @@ body {
   line-height: 1.4;
 }
 
+.notificacion-con-icono {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notificacion-reprogramada .notificacion-acciones {
+  padding-left: 44px;
+}
+
 .aviso {
   display: flex;
   align-items: flex-start;
@@ -378,6 +388,7 @@ body {
 .aviso-confirmacion { --color-aviso: var(--color-salvia-oscuro); }
 .aviso-tal_vez { --color-aviso: #b8901f; }
 .aviso-comentario { --color-aviso: #6f86a8; }
+.aviso-reprogramacion { --color-aviso: #b8901f; }
 .aviso-rechazo,
 .aviso-baja,
 .aviso-cancelacion,
@@ -981,6 +992,30 @@ strong.grilla-linea {
   background: var(--color-tarjeta);
   box-shadow: 0 8px 24px rgba(43, 43, 38, 0.12);
   list-style: none;
+}
+
+.dialogo-menu-opcion.dialogo-menu-opcion-neutra {
+  display: block;
+  color: var(--color-texto);
+  text-decoration: none;
+}
+
+.reprogramar-actual {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-borde);
+  background: #fbfaf7;
+}
+
+.reprogramar-actual-cuando {
+  font-weight: 600;
+}
+
+.reprogramar-aviso {
+  margin: 4px 0 18px;
 }
 
 .dialogo-menu-opcion {

@@ -46,6 +46,31 @@ def obtener_no_leidas(usuario_id):
         return sesion.scalars(consulta).all()
 
 
+def juntadas_reprogramadas(usuario_id, juntadas_ids):
+    if not juntadas_ids:
+        return set()
+    with Session() as sesion:
+        consulta = select(NotificacionTabla.juntada_id).where(
+            NotificacionTabla.usuario_id == usuario_id,
+            NotificacionTabla.tipo == "reprogramacion",
+            NotificacionTabla.juntada_id.in_(juntadas_ids),
+        )
+        return set(sesion.scalars(consulta).all())
+
+
+def marcar_leidas_de_juntadas(sesion, usuario_id, juntadas_ids, tipo):
+    sesion.execute(
+        update(NotificacionTabla)
+        .where(
+            NotificacionTabla.usuario_id == usuario_id,
+            NotificacionTabla.juntada_id.in_(juntadas_ids),
+            NotificacionTabla.tipo == tipo,
+            NotificacionTabla.leida.is_(False),
+        )
+        .values(leida=True)
+    )
+
+
 def marcar_leidas(usuario_id):
     with Session() as sesion:
         sesion.execute(

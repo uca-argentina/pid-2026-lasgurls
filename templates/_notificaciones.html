@@ -10,13 +10,6 @@
   </summary>
 
   <div class="panel panel-notificaciones">
-    <div class="panel-encabezado">Notificaciones</div>
-
-    {% if not notificaciones_juntadas and not notificaciones_amistad and not notificaciones_avisos %}
-    <p class="panel-vacio">Estás al día. No tenés nada para responder.</p>
-    {% endif %}
-
-    {% if notificaciones_avisos %}
     {% set iconos = {
       "confirmacion": '<path d="M20 6 9 17l-5-5"/>',
       "rechazo": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
@@ -24,8 +17,16 @@
       "baja": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/>',
       "cancelacion": '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m10 14 4 4"/><path d="m14 14-4 4"/>',
       "eliminada": '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+      "reprogramacion": '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M12 14v3l2 1"/>',
       "comentario": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
     } %}
+    <div class="panel-encabezado">Notificaciones</div>
+
+    {% if not notificaciones_juntadas and not notificaciones_amistad and not notificaciones_avisos %}
+    <p class="panel-vacio">Estás al día. No tenés nada para responder.</p>
+    {% endif %}
+
+    {% if notificaciones_avisos %}
     <h4 class="panel-subtitulo">Novedades</h4>
     <ul class="panel-lista">
       {% for aviso in notificaciones_avisos %}
@@ -52,14 +53,25 @@
     <h4 class="panel-subtitulo">Juntadas</h4>
     <ul class="panel-lista">
       {% for item in notificaciones_juntadas %}
-      <li class="notificacion">
+      <li class="notificacion{% if item.reprogramada %} notificacion-reprogramada{% endif %}">
+        {% if item.reprogramada %}
+        <div class="notificacion-con-icono">
+          <span class="aviso-icono aviso-reprogramacion">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ iconos["reprogramacion"]|safe }}</svg>
+          </span>
+        {% endif %}
         <p class="notificacion-texto">
+          {% if item.reprogramada %}
+          <strong>{{ item.organizador }}</strong> reprogramó <strong>{{ item.juntada.titulo }}</strong>
+          {% else %}
           <strong>{{ item.organizador }}</strong> te invitó a <strong>{{ item.juntada.titulo }}</strong>
+          {% endif %}
           <span class="notificacion-detalle">
-            {{ item.juntada.fecha.strftime('%d/%m') }} · {{ texto_horario(item.juntada.fecha, item.juntada.hora_inicio, item.juntada.hora_fin) }}{% if item.estado == "Tal vez" %} · Dijiste tal vez{% endif %}
+            {% if item.reprogramada %}Nuevo horario: {% endif %}{{ item.juntada.fecha.strftime('%d/%m') }} · {{ texto_horario(item.juntada.fecha, item.juntada.hora_inicio, item.juntada.hora_fin) }}{% if item.estado == "Tal vez" %} · Dijiste tal vez{% endif %}
             {% if item.repeticion %}<br>{{ item.repeticion }} · {{ item.fechas }} {{ "fecha" if item.fechas == 1 else "fechas" }}{% endif %}
           </span>
         </p>
+        {% if item.reprogramada %}</div>{% endif %}
         <div class="notificacion-acciones">
           <form method="POST" action="{{ url_for('responder_juntada', juntada_id=item.juntada.id) }}">
             <input type="hidden" name="volver" value="">

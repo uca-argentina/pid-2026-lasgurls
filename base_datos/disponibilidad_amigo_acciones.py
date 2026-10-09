@@ -1,5 +1,5 @@
 from datetime import timedelta
-from sqlalchemy import select, union_all
+from sqlalchemy import select, union_all, true
 from base_datos.configuracion import Session
 from base_datos.agenda_tabla import AgendaTabla
 from base_datos.juntada_tabla import JuntadaTabla
@@ -9,7 +9,7 @@ from base_datos.solicitud_acciones import obtener_amigos_de_usuario
 from dominio.modulo_utilidades.rango_horario import rango_del_evento
 
 
-def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
+def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta, excluir_juntada_id=None):
     if not set(amigos_ids).issubset(obtener_amigos_de_usuario(usuario_solicitante_id)):
         raise ValueError("Solo podés ver la disponibilidad de tus amigos")
 
@@ -24,7 +24,11 @@ def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
     organizadas = select(
         JuntadaTabla.organizador_id, JuntadaTabla.fecha, JuntadaTabla.hora_inicio, JuntadaTabla.hora_fin,
         JuntadaTabla.titulo, JuntadaTabla.visibilidad,
-    ).where(JuntadaTabla.organizador_id.in_(usuarios_ids), JuntadaTabla.fecha.between(*fechas))
+    ).where(
+        JuntadaTabla.organizador_id.in_(usuarios_ids),
+        JuntadaTabla.fecha.between(*fechas),
+        JuntadaTabla.id != excluir_juntada_id if excluir_juntada_id else true(),
+    )
 
     confirmadas = (
         select(
@@ -36,6 +40,7 @@ def obtener_disponibilidad(usuario_solicitante_id, amigos_ids, desde, hasta):
             JuntadaInvitadosTabla.usuario_id.in_(usuarios_ids),
             JuntadaInvitadosTabla.estado == "Si",
             JuntadaTabla.fecha.between(*fechas),
+            JuntadaTabla.id != excluir_juntada_id if excluir_juntada_id else true(),
         )
     )
 

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reprogramar juntada{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha tarjeta-con-grilla">
+  <div class="encabezado-tarjeta">
+    <h2>Reprogramar «{{ juntada.titulo }}»</h2>
+    <div class="encabezado-acciones">
+      <a href="{{ url_for('mostrar_calendario', fecha=juntada.fecha.isoformat()) }}" class="boton-texto">Cancelar</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <p class="mensaje-error">{{ error }}</p>
+  {% endif %}
+
+  <div class="reprogramar-actual">
+    <span class="etiqueta">Ahora es</span>
+    <span class="reprogramar-actual-cuando">{{ cuando_actual }}</span>
+  </div>
+
+  <form method="POST" action="{{ url_for('reprogramar', juntada_id=juntada.id) }}" data-formulario-con-disponibilidad="juntada">
+    {% for invitado_id, nombre in invitados %}
+    <input type="checkbox" name="invitados" value="{{ invitado_id }}" data-nombre="{{ nombre }}" data-iniciales="{{ nombre|iniciales }}" checked hidden>
+    {% endfor %}
+
+    {% include "_horario_con_disponibilidad.html" %}
+
+    <p class="campo-ayuda reprogramar-aviso">Les vamos a avisar a los invitados y los que ya habían respondido van a tener que confirmar de nuevo.</p>
+
+    <button type="submit" class="boton-enviar">Reprogramar</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='grilla_semanal.js') }}" defer></script>
+<script src="{{ url_for('static', filename='disponibilidad.js') }}" defer></script>
+{% endblock %}

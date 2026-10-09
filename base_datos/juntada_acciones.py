@@ -5,7 +5,7 @@ from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.categoria_tabla import CategoriaTabla
 from base_datos.comentario_tabla import ComentarioTabla
-from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resaltar
+from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resaltar, marcar_leidas_de_juntadas
 from dominio.modulo_utilidades.rango_horario import ya_empezo
 from dominio.juntada.recurrencia import texto_de_repeticion
 
@@ -83,6 +83,7 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la
         resultado = sesion.execute(consulta)
 
         if resultado.rowcount > 0:
+            marcar_leidas_de_juntadas(sesion, usuario_id, juntadas_ids, "reprogramacion")
             juntada = sesion.get(JuntadaTabla, juntada_id)
             cuando = f"({texto_de_repeticion(juntada.repeticion, juntada.fecha)})" if toda_la_serie and juntada.serie_id else f"del {juntada.fecha:%d/%m}"
             tipo, verbo = RESPUESTAS[nueva_respuesta]
@@ -118,6 +119,40 @@ def cancelar_juntada(juntada_id, organizador_id, ahora):
         texto = f"{nombre_de_usuario(sesion, organizador_id)} canceló {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
         notificar(sesion, sesion.scalars(consulta).all(), "cancelacion", texto, ahora)
         _borrar_juntada(sesion, juntada_id)
+        sesion.commit()
+        return True
+
+
+def reprogramar_juntada(juntada_id, organizador_id, reprogramacion, ahora):
+    with Session() as sesion:
+        juntada = sesion.get(JuntadaTabla, juntada_id)
+        if juntada is None or juntada.organizador_id != organizador_id or ya_empezo(juntada.fecha, juntada.hora_inicio, ahora):
+            return False
+
+        juntada.fecha = reprogramacion.fecha
+        juntada.hora_inicio = reprogramacion.hora_inicio
+        juntada.hora_fin = reprogramacion.hora_fin
+        juntada.serie_id = None
+        juntada.repeticion = None
+
+        sesion.execute(
+            update(JuntadaInvitadosTabla)
+            .where(
+                JuntadaInvitadosTabla.juntada_id == juntada_id,
+                JuntadaInvitadosTabla.estado.in_(["Si", "Tal vez"]),
+            )
+            .values(estado="Pendiente")
+        )
+
+        consulta = select(JuntadaInvitadosTabla.usuario_id).where(
+            JuntadaInvitadosTabla.juntada_id == juntada_id,
+            JuntadaInvitadosTabla.estado != "No",
+        )
+        texto = (
+            f"{nombre_de_usuario(sesion, organizador_id)} reprogramó {resaltar(juntada.titulo)} "
+            f"para el {juntada.fecha:%d/%m} de {juntada.hora_inicio:%H:%M} a {juntada.hora_fin:%H:%M}"
+        )
+        notificar(sesion, sesion.scalars(consulta).all(), "reprogramacion", texto, ahora, juntada)
         sesion.commit()
         return True
 

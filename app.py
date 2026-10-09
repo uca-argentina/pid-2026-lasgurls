@@ -6,6 +6,7 @@ import calendar as modulo_calendario
 from flask import Flask, request, render_template, session, redirect, url_for, g
 from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
+from dominio.juntada.reprogramacion import Reprogramacion
 from dominio.juntada.recurrencia import Recurrencia, un_anio_despues, texto_de_repeticion
 from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
@@ -25,9 +26,11 @@ from base_datos.juntada_acciones import (
     responder_invitacion,
     cancelar_juntada as borrar_juntada_organizada,
     darse_de_baja as bajarse_de_juntada,
+    reprogramar_juntada,
+    obtener_por_id,
 )
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
-from base_datos.notificacion_acciones import obtener_no_leidas, marcar_leidas
+from base_datos.notificacion_acciones import obtener_no_leidas, marcar_leidas, juntadas_reprogramadas
 from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
 from base_datos.grupo_acciones import guardar as guardarGrupo, borrar as borrarGrupo, obtenerDeUsuario as obtenerGrupos
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
@@ -138,9 +141,15 @@ def datos_del_header():
     ]
     invitaciones.sort(key=lambda item: (item["juntada"].fecha, item["juntada"].hora_inicio))
     invitaciones=agrupar_por_serie(invitaciones)
+    reprogramadas=juntadas_reprogramadas(usuario.id,[item["juntada"].id for item in invitaciones])
+    for item in invitaciones:
+        item["reprogramada"]=item["juntada"].id in reprogramadas
 
     solicitudes=solicitudes_recibidas()
-    avisos=obtener_no_leidas(usuario.id)
+    avisos=[
+        aviso for aviso in obtener_no_leidas(usuario.id)
+        if not (aviso.tipo=="reprogramacion" and aviso.juntada_id in reprogramadas)
+    ]
     pendientes=len(solicitudes)+len(avisos)+sum(1 for item in invitaciones if item["estado"]=="Pendiente")
 
     return {
@@ -394,6 +403,7 @@ def acciones_del_evento(evento,ahora):
     return {
         "responder":url_for("responder_juntada",juntada_id=juntada_id) if tipo in ("pendiente","tal_vez") else None,
         "cancelar":url_for("cancelar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
+        "reprogramar":url_for("mostrar_reprogramar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
         "borrar":url_for("borrar_evento_propio",evento_id=evento["agenda_id"]) if tipo=="personal" else None,
@@ -542,6 +552,50 @@ def cancelar_juntada(juntada_id):
     if not borrar_juntada_organizada(juntada_id, session["usuarioID"], datetime.now()):
         return "No se puede cancelar esta juntada.", 400
     return volver_al_calendario()
+
+def juntada_para_reprogramar(juntada_id):
+    juntada=obtener_por_id(juntada_id)
+    if juntada is None or juntada.organizador_id!=session["usuarioID"] or ya_empezo(juntada.fecha,juntada.hora_inicio,datetime.now()):
+        return None
+    return juntada
+
+def formulario_reprogramar(juntada,fecha_sugerida,hora_desde,hora_hasta,error=None):
+    invitados=[(invitado_id,nombre) for _,invitado_id,nombre,estado in obtener_invitados_de_juntadas([juntada.id]) if estado!="No"]
+    inicio,fin=rango_del_evento(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)
+    minutos=int((fin-inicio).total_seconds()//60)
+    duracion=min((opcion for opcion,_ in DURACIONES_JUNTADA),key=lambda opcion:abs(opcion-minutos))
+    return formulario_con_horario(
+        "juntada_reprogramar.html",fecha_sugerida,duracion,error,hora_desde,hora_hasta,
+        juntada=juntada,invitados=invitados,
+        cuando_actual=f"{nombre_del_dia(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}",
+    )
+
+@app.route("/juntada/<int:juntada_id>/reprogramar",methods=["GET"])
+@login_requerido
+def mostrar_reprogramar_juntada(juntada_id):
+    juntada=juntada_para_reprogramar(juntada_id)
+    if juntada is None:
+        return "No se puede reprogramar esta juntada.", 400
+    return formulario_reprogramar(juntada,juntada.fecha.isoformat(),f"{juntada.hora_inicio:%H:%M}",f"{juntada.hora_fin:%H:%M}")
+
+@app.route("/juntada/<int:juntada_id>/reprogramar",methods=["POST"])
+@login_requerido
+def reprogramar(juntada_id):
+    juntada=juntada_para_reprogramar(juntada_id)
+    if juntada is None:
+        return "No se puede reprogramar esta juntada.", 400
+    fecha_parametro=request.form.get("fecha","")
+    ahora=datetime.now()
+    try:
+        fecha_formateada=datetime.strptime(fecha_parametro,"%Y-%m-%d").strftime("%d/%m/%Y")
+        reprogramacion=Reprogramacion(fecha_formateada,request.form.get("hora_inicio"),request.form.get("hora_fin"),ahora)
+        reprogramacion.validar_que_cambie(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)
+    except ValueError as error:
+        return formulario_reprogramar(juntada,fecha_parametro,"","",str(error)), 400
+
+    if not reprogramar_juntada(juntada_id,session["usuarioID"],reprogramacion,ahora):
+        return "No se puede reprogramar esta juntada.", 400
+    return redirect(url_for("mostrar_calendario",fecha=fecha_parametro,juntada=juntada_id))
 
 @app.route("/juntada/<int:juntada_id>/abandonar",methods=["POST"])
 @login_requerido
@@ -701,7 +755,7 @@ def consultar_disponibilidad():
     inicio=datetime.combine(lunes,time(0))
     fin=inicio+timedelta(days=7)+duracion
     try:
-        ocupados=obtener_disponibilidad(session["usuarioID"],request.args.getlist("amigos",type=int),lunes,fin.date())
+        ocupados=obtener_disponibilidad(session["usuarioID"],request.args.getlist("amigos",type=int),lunes,fin.date(),request.args.get("excluir",type=int))
     except ValueError as error:
         return {"error":str(error)},403
 

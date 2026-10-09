@@ -14,7 +14,7 @@
   </div>
 </div>
 
-<div class="disponibilidad" data-disponibilidad="{{ url_for('consultar_disponibilidad') }}" hidden>
+<div class="disponibilidad" data-disponibilidad="{{ url_for('consultar_disponibilidad') }}"{% if juntada %} data-excluir="{{ juntada.id }}"{% endif %} hidden>
   <div class="disponibilidad-encabezado">
     <div class="semana-navegacion">
       <button type="button" class="boton-neutro boton-chico" data-semana="-1" aria-label="Semana anterior">‹</button>

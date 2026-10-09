@@ -100,6 +100,7 @@
     });
     formulario.querySelectorAll('input[name="invitados"]').forEach(function (casilla) {
       var avatar = casilla.parentElement.querySelector(".avatar");
+      if (!avatar) return;
       avatar.className = "avatar avatar-chico";
       var indice = amigosElegidos().indexOf(casilla) + 1;
       if (indice > 0) avatar.classList.add("grilla-persona-" + (indice % COLORES_PERSONAS));
@@ -258,6 +259,7 @@
       amigosElegidos().forEach(function (casilla) {
         parametros.append("amigos", casilla.value);
       });
+      if (panel.dataset.excluir) parametros.append("excluir", panel.dataset.excluir);
       panel.hidden = false;
       panel.classList.add("cargando");
 
