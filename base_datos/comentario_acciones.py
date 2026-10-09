@@ -4,6 +4,7 @@ from base_datos.comentario_tabla import ComentarioTabla
 from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
+from base_datos.notificacion_acciones import notificar, nombre_de_usuario, participantes, resaltar
 
 
 def guardar(comentario,ahora):
@@ -17,6 +18,12 @@ def guardar(comentario,ahora):
             fechaHora=ahora
         )
         sesion.add(fila)
+        juntada=sesion.get(JuntadaTabla,comentario.juntadaID)
+        destinatarios=[usuarioID for usuarioID in participantes(sesion,juntada) if usuarioID!=comentario.usuarioID]
+        resumen=comentario.texto.replace("*","")
+        resumen=resumen if len(resumen)<=80 else resumen[:80]+"…"
+        texto=f"{nombre_de_usuario(sesion,comentario.usuarioID)} comentó en {resaltar(juntada.titulo)}: «{resumen}»"
+        notificar(sesion,destinatarios,"comentario",texto,ahora,juntada)
         sesion.commit()
         return True
 

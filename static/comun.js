@@ -63,6 +63,30 @@
   }
 
   setInterval(actualizarNotificaciones, 15000);
+
+  function mostrarInsignia(desplegable, cantidad) {
+    var insignia = desplegable.querySelector(".insignia");
+    if (!insignia) return;
+    if (cantidad > 0) insignia.textContent = cantidad < 10 ? cantidad : "9+";
+    else insignia.remove();
+  }
+
+  document.addEventListener("toggle", function (evento) {
+    var desplegable = evento.target;
+    if (!desplegable.dataset || desplegable.dataset.marcarLeidas === undefined) return;
+    if (!desplegable.open) {
+      if (desplegable.dataset.leidas) actualizarNotificaciones();
+      return;
+    }
+    var avisos = Number(desplegable.dataset.avisos);
+    if (!avisos || desplegable.dataset.leidas) return;
+    desplegable.dataset.leidas = "si";
+    fetch(desplegable.dataset.marcarLeidas, { method: "POST" })
+      .then(function (respuesta) {
+        if (respuesta.ok) mostrarInsignia(desplegable, Number(desplegable.dataset.pendientes) - avisos);
+      })
+      .catch(function () {});
+  }, true);
   document.addEventListener("visibilitychange", actualizarNotificaciones);
 
   window.addEventListener("pageshow", function () {

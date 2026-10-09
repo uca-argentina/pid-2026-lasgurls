@@ -27,6 +27,7 @@ from base_datos.juntada_acciones import (
     darse_de_baja as bajarse_de_juntada,
 )
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
+from base_datos.notificacion_acciones import obtener_no_leidas, marcar_leidas
 from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
 from base_datos.grupo_acciones import guardar as guardarGrupo, borrar as borrarGrupo, obtenerDeUsuario as obtenerGrupos
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
@@ -66,6 +67,19 @@ def volver_a(destino_por_defecto):
     if destino.startswith("/") and not destino.startswith("//") and "\\" not in destino:
         return redirect(destino)
     return redirect(destino_por_defecto)
+
+@app.template_filter("hace")
+def hace(momento):
+    minutos=int((datetime.now()-momento).total_seconds()//60)
+    if minutos<1:
+        return "Recién"
+    if minutos<60:
+        return f"Hace {minutos} min"
+    if minutos<24*60:
+        return f"Hace {minutos//60} h"
+    if (date.today()-momento.date()).days==1:
+        return f"Ayer, {momento:%H:%M}"
+    return f"{momento:%d/%m, %H:%M}"
 
 @app.template_filter("iniciales")
 def iniciales(nombre):
@@ -126,12 +140,14 @@ def datos_del_header():
     invitaciones=agrupar_por_serie(invitaciones)
 
     solicitudes=solicitudes_recibidas()
-    pendientes=len(solicitudes)+sum(1 for item in invitaciones if item["estado"]=="Pendiente")
+    avisos=obtener_no_leidas(usuario.id)
+    pendientes=len(solicitudes)+len(avisos)+sum(1 for item in invitaciones if item["estado"]=="Pendiente")
 
     return {
         "usuario_actual":usuario,
         "notificaciones_juntadas":invitaciones,
         "notificaciones_amistad":solicitudes,
+        "notificaciones_avisos":avisos,
         "notificaciones_pendientes":pendientes,
     }
 
@@ -510,7 +526,7 @@ def crear_juntada():
 @app.route("/juntada/<int:juntada_id>/responder",methods=["POST"])
 @login_requerido
 def responder_juntada(juntada_id):
-    responder_invitacion(juntada_id, session["usuarioID"], request.form.get("respuesta"), request.form.get("serie")=="1")
+    responder_invitacion(juntada_id, session["usuarioID"], request.form.get("respuesta"), datetime.now(), request.form.get("serie")=="1")
     return volver_al_calendario()
 
 @app.route("/agenda/<int:evento_id>/borrar",methods=["POST"])
@@ -623,6 +639,12 @@ def borrar_categoria_propia(categoria_id):
 @login_requerido
 def mostrar_notificaciones():
     return render_template("_notificaciones.html")
+
+@app.route("/notificaciones/leidas",methods=["POST"])
+@login_requerido
+def marcar_notificaciones_leidas():
+    marcar_leidas(session["usuarioID"])
+    return "",204
 
 @app.route("/amistad/eliminar/<int:amigoID>",methods=["POST"])
 @login_requerido

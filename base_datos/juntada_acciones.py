@@ -5,7 +5,11 @@ from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.categoria_tabla import CategoriaTabla
 from base_datos.comentario_tabla import ComentarioTabla
+from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resaltar
 from dominio.modulo_utilidades.rango_horario import ya_empezo
+from dominio.juntada.recurrencia import texto_de_repeticion
+
+RESPUESTAS = {"Si": ("confirmacion", "confirmó"), "No": ("rechazo", "no va a"), "Tal vez": ("tal_vez", "dijo tal vez a")}
 
 
 def guardar(juntada):
@@ -60,7 +64,7 @@ def obtener_invitados_de_juntada(juntada_id):
         )
         return sesion.scalars(consulta).all()
 
-def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, toda_la_serie=False):
+def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la_serie=False):
     if nueva_respuesta not in ("Si", "No", "Tal vez"):
         return False
 
@@ -78,9 +82,16 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, toda_la_serie=
 
         resultado = sesion.execute(consulta)
 
+        if resultado.rowcount > 0:
+            juntada = sesion.get(JuntadaTabla, juntada_id)
+            cuando = f"({texto_de_repeticion(juntada.repeticion, juntada.fecha)})" if toda_la_serie and juntada.serie_id else f"del {juntada.fecha:%d/%m}"
+            tipo, verbo = RESPUESTAS[nueva_respuesta]
+            texto = f"{nombre_de_usuario(sesion, usuario_id)} {verbo} {resaltar(juntada.titulo)} {cuando}"
+            notificar(sesion, [juntada.organizador_id], tipo, texto, ahora, juntada)
+
         if resultado.rowcount > 0 and nueva_respuesta == "No":
             for id in juntadas_ids:
-                _borrar_si_todos_rechazaron(sesion, id)
+                _borrar_si_todos_rechazaron(sesion, id, ahora)
 
         sesion.commit()
 
@@ -100,6 +111,12 @@ def cancelar_juntada(juntada_id, organizador_id, ahora):
         juntada = sesion.get(JuntadaTabla, juntada_id)
         if juntada is None or juntada.organizador_id != organizador_id or ya_empezo(juntada.fecha, juntada.hora_inicio, ahora):
             return False
+        consulta = select(JuntadaInvitadosTabla.usuario_id).where(
+            JuntadaInvitadosTabla.juntada_id == juntada_id,
+            JuntadaInvitadosTabla.estado != "No",
+        )
+        texto = f"{nombre_de_usuario(sesion, organizador_id)} canceló {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
+        notificar(sesion, sesion.scalars(consulta).all(), "cancelacion", texto, ahora)
         _borrar_juntada(sesion, juntada_id)
         sesion.commit()
         return True
@@ -123,17 +140,22 @@ def darse_de_baja(juntada_id, usuario_id, ahora):
         resultado = sesion.execute(consulta)
 
         if resultado.rowcount == 1:
-            _borrar_si_todos_rechazaron(sesion, juntada_id)
+            texto = f"{nombre_de_usuario(sesion, usuario_id)} se bajó de {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
+            notificar(sesion, [juntada.organizador_id], "baja", texto, ahora, juntada)
+            _borrar_si_todos_rechazaron(sesion, juntada_id, ahora)
 
         sesion.commit()
         return resultado.rowcount == 1
 
 
-def _borrar_si_todos_rechazaron(sesion, juntada_id):
+def _borrar_si_todos_rechazaron(sesion, juntada_id, ahora):
     consulta = select(JuntadaInvitadosTabla.estado).where(JuntadaInvitadosTabla.juntada_id == juntada_id)
     estados = sesion.scalars(consulta).all()
 
     if estados and all(estado == "No" for estado in estados):
+        juntada = sesion.get(JuntadaTabla, juntada_id)
+        texto = f"Nadie va a ir a {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}, así que se eliminó"
+        notificar(sesion, [juntada.organizador_id], "eliminada", texto, ahora)
         _borrar_juntada(sesion, juntada_id)
 
 

@@ -428,6 +428,29 @@
     if (datos) dibujar(false);
   }, 60000);
 
+  function actualizarDatos() {
+    if (!datos || document.hidden || document.querySelector("dialog[open]")) return;
+    fetch(window.location.href)
+      .then(function (respuesta) {
+        return respuesta.ok && !respuesta.redirected ? respuesta.text() : null;
+      })
+      .then(function (html) {
+        if (html === null || !datos || document.querySelector("dialog[open]")) return;
+        var nueva = new DOMParser().parseFromString(html, "text/html").querySelector("[data-datos-calendario]");
+        var actual = document.querySelector("[data-datos-calendario]");
+        if (!nueva || !actual || nueva.textContent === actual.textContent) return;
+        var fecha = datos.fecha;
+        actual.textContent = nueva.textContent;
+        leerDatos();
+        datos.fecha = fecha;
+        dibujar(false);
+      })
+      .catch(function () {});
+  }
+
+  setInterval(actualizarDatos, 15000);
+  document.addEventListener("visibilitychange", actualizarDatos);
+
   if (leerDatos()) dibujar(true);
   if(datos)abrirJuntadaPedida();
 })();

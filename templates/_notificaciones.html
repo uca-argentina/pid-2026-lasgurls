@@ -1,4 +1,4 @@
-<details class="desplegable">
+<details class="desplegable" data-avisos="{{ notificaciones_avisos|length }}" data-pendientes="{{ notificaciones_pendientes }}" data-marcar-leidas="{{ url_for('marcar_notificaciones_leidas') }}">
   <summary class="boton-icono" aria-label="Notificaciones{% if notificaciones_pendientes %} ({{ notificaciones_pendientes }} sin responder){% endif %}">
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
@@ -12,8 +12,40 @@
   <div class="panel panel-notificaciones">
     <div class="panel-encabezado">Notificaciones</div>
 
-    {% if not notificaciones_juntadas and not notificaciones_amistad %}
+    {% if not notificaciones_juntadas and not notificaciones_amistad and not notificaciones_avisos %}
     <p class="panel-vacio">Estás al día. No tenés nada para responder.</p>
+    {% endif %}
+
+    {% if notificaciones_avisos %}
+    {% set iconos = {
+      "confirmacion": '<path d="M20 6 9 17l-5-5"/>',
+      "rechazo": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+      "tal_vez": '<path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+      "baja": '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6"/>',
+      "cancelacion": '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m10 14 4 4"/><path d="m14 14-4 4"/>',
+      "eliminada": '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+      "comentario": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    } %}
+    <h4 class="panel-subtitulo">Novedades</h4>
+    <ul class="panel-lista">
+      {% for aviso in notificaciones_avisos %}
+      <li class="aviso">
+        <span class="aviso-icono aviso-{{ aviso.tipo }}">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            {{ (iconos[aviso.tipo] or '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>')|safe }}
+          </svg>
+        </span>
+        {% if aviso.juntada_id %}
+        <a class="aviso-cuerpo" href="{{ url_for('mostrar_calendario', fecha=aviso.fecha_juntada.isoformat(), juntada=aviso.juntada_id) }}">
+        {% else %}
+        <span class="aviso-cuerpo">
+        {% endif %}
+          <span class="aviso-texto">{% for parte in aviso.texto.split("**") %}{% if loop.index is even %}<strong>{{ parte }}</strong>{% else %}{{ parte }}{% endif %}{% endfor %}</span>
+          <span class="aviso-cuando">{{ aviso.fecha_hora|hace }}</span>
+        {% if aviso.juntada_id %}</a>{% else %}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
     {% endif %}
 
     {% if notificaciones_juntadas %}

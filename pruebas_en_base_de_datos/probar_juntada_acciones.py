@@ -1,3 +1,4 @@
+from datetime import datetime
 
 from dominio.juntada.juntada import Juntada
 from base_datos.juntada_acciones import guardar, obtener_invitaciones_de_usuario, responder_invitacion
@@ -19,7 +20,7 @@ print("\nInvitaciones de usuario 2 ANTES de responder:")
 for fila in resultados_invitaciones:
     print("id de invitacion:", fila.id, " id de juntada:", fila.juntada_id, " id del invitado:", fila.usuario_id, "estado:", fila.estado)
 
-exito = responder_invitacion(juntada_id, 2, "Tal vez")
+exito = responder_invitacion(juntada_id, 2, "Tal vez", datetime.now())
 print("\n¿Se pudo responder la invitacion (Tal vez)?", exito)
 
 resultados_invitaciones = obtener_invitaciones_de_usuario(2)
@@ -28,10 +29,10 @@ for fila in resultados_invitaciones:
     print("id de invitacion:", fila.id, " id de juntada:", fila.juntada_id, " id del invitado:", fila.usuario_id, "estado:", fila.estado)
 
 
-exito_si = responder_invitacion(juntada_id, 2, "Si")
+exito_si = responder_invitacion(juntada_id, 2, "Si", datetime.now())
 print("\n¿Se pudo responder la invitacion (Si)? Esperado True ->", exito_si)
 
-exito_no_deberia_cambiar = responder_invitacion(juntada_id, 2, "No")
+exito_no_deberia_cambiar = responder_invitacion(juntada_id, 2, "No", datetime.now())
 print("¿Se pudo cambiar de 'Si' a 'No'? Esperado False ->", exito_no_deberia_cambiar)
 
 resultados_invitaciones = obtener_invitaciones_de_usuario(2)

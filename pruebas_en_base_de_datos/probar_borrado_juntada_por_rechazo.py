@@ -1,3 +1,4 @@
+from datetime import datetime
 
 import time
 
@@ -38,12 +39,12 @@ try:
     juntada_id = guardar_juntada(juntada)
     print("Juntada creada con id:", juntada_id)
 
-    responder_invitacion(juntada_id, invitado_1_id, "No")
+    responder_invitacion(juntada_id, invitado_1_id, "No", datetime.now())
     assert obtener_por_id(juntada_id) is not None, "La juntada no debería borrarse con un solo rechazo"
     assert len(obtener_invitados_de_juntada(juntada_id)) == 2, "Los invitados no deberían borrarse todavía"
     print("OK: rechazo parcial -> la juntada sigue existiendo")
 
-    responder_invitacion(juntada_id, invitado_2_id, "No")
+    responder_invitacion(juntada_id, invitado_2_id, "No", datetime.now())
     assert obtener_por_id(juntada_id) is None, "La juntada debería borrarse cuando todos rechazan"
     assert len(obtener_invitados_de_juntada(juntada_id)) == 0, "Los invitados deberían borrarse junto con la juntada"
     print("OK: rechazo total -> la juntada se borró junto con sus invitados")
