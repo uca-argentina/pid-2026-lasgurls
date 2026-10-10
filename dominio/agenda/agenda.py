@@ -1,10 +1,11 @@
 from datetime import datetime
 from dominio.modulo_utilidades.parseo_hora_fecha import parsear_fecha, parsear_hora
 from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEvento
+from dominio.ubicacion import Ubicacion
 
 
 class Agenda:
-    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True):
+    def __init__(self, usuario_id, fecha, titulo_reunion, hora_inicio, hora_fin, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True, ubicacion=""):
         self.usuario_id = usuario_id
         self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
@@ -12,6 +13,7 @@ class Agenda:
         self.hora_fin = parsear_hora(hora_fin, "hora de finalización")
         self.titulo_reunion = titulo_reunion
         self.visibilidad=visibilidad
+        self.ubicacion=Ubicacion(ubicacion).texto
 
         self.validar_agenda()
         ValidadorDetipoEvento().validar_que_pueda_mostrar_detalle(self.visibilidad, comparte_detalles)
