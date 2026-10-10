@@ -26,6 +26,7 @@ from base_datos.juntada_acciones import (
     obtener_invitados_de_juntadas,
     responder_invitacion,
     cancelar_juntada as borrar_juntada_organizada,
+    cancelar_serie,
     darse_de_baja as bajarse_de_juntada,
     reprogramar_juntada,
     obtener_por_id,
@@ -210,7 +211,7 @@ def login():
 
     session.clear()
     session["usuarioID"]=usuario_encontrado.id
-    return redirect(url_for("mostrar_calendario"))
+    return redirect(url_for("mostrar_inicio"))
 
 @app.route("/logout",methods=["POST"])
 def logout():
@@ -270,23 +271,7 @@ def baja_cuenta():
     session.clear()
     return redirect(url_for("mostrar_login",baja="1"))
 
-@app.route("/calendario",methods=["GET"])
-@login_requerido
-def mostrar_calendario():
-    usuario_id=session["usuarioID"]
-
-    fecha_parametro=request.args.get("fecha")
-    try:
-        fecha_seleccionada=date.fromisoformat(fecha_parametro) if fecha_parametro else date.today()
-    except ValueError:
-        fecha_seleccionada=date.today()
-
-    semanas=modulo_calendario.Calendar(firstweekday=0).monthdatescalendar(
-        fecha_seleccionada.year, fecha_seleccionada.month
-    )
-    lunes=fecha_seleccionada-timedelta(days=fecha_seleccionada.weekday())
-    desde=semanas[0][0]-timedelta(days=1)
-    hasta=semanas[-1][-1]
+def eventos_del_usuario(usuario_id,desde,hasta):
     eventos=[]
 
     for agenda,categoria,color in obtener_agenda_de_usuario(usuario_id,desde,hasta):
@@ -315,7 +300,7 @@ def mostrar_calendario():
         eventos.append({
             "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
             "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
-            "juntada_id":juntada.id,"categoria":categoria,"color":color,
+            "juntada_id":juntada.id,"serie_id":juntada.serie_id,"categoria":categoria,"color":color,
             "personas":[persona(g.usuario.nombre,"organiza",es_vos=True)]+[persona(nombre,estado) for nombre,estado in invitados],
             "ubicacion":juntada.ubicacion,
         })
@@ -337,6 +322,128 @@ def mostrar_calendario():
             "personas":[persona(organizador,"organiza")]+invitados_por_juntada.get(juntada.id,[]),
             "ubicacion":juntada.ubicacion,
         })
+    return eventos
+
+HORA_INICIO_SEMANA=8
+MAXIMO_PROXIMAS=5
+
+def asignar_carriles(bloques):
+    grupo=[]
+    fin_del_grupo=None
+    for bloque in sorted(bloques,key=lambda bloque:(bloque["inicio"],bloque["fin"])):
+        if grupo and bloque["inicio"]>=fin_del_grupo:
+            repartir_carriles(grupo)
+            grupo=[]
+        grupo.append(bloque)
+        fin_del_grupo=bloque["fin"] if fin_del_grupo is None or len(grupo)==1 else max(fin_del_grupo,bloque["fin"])
+    if grupo:
+        repartir_carriles(grupo)
+
+def repartir_carriles(grupo):
+    finales=[]
+    for bloque in grupo:
+        carril=next((indice for indice,fin in enumerate(finales) if fin<=bloque["inicio"]),len(finales))
+        if carril==len(finales):
+            finales.append(bloque["fin"])
+        else:
+            finales[carril]=bloque["fin"]
+        bloque["carril"]=carril
+    for bloque in grupo:
+        bloque["izquierda"]=round(bloque["carril"]/len(finales)*100,2)
+        bloque["ancho"]=round(100/len(finales),2)
+
+def mi_semana(lunes,eventos,ahora):
+    dias=dias_de_la_semana(lunes)
+    por_dia={dia:[] for dia in dias}
+    for evento in eventos:
+        inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
+        for dia in dias:
+            inicio_dia=datetime.combine(dia,time(0))
+            desde,hasta=max(inicio,inicio_dia),min(fin,inicio_dia+timedelta(days=1))
+            if desde<hasta:
+                por_dia[dia].append({"inicio":desde,"fin":hasta,"evento":evento,"sigue":inicio<inicio_dia})
+
+    primera_hora=min([HORA_INICIO_SEMANA]+[bloque["inicio"].hour for bloques in por_dia.values() for bloque in bloques if not bloque["sigue"]])
+    minutos_visibles=(24-primera_hora)*60
+    semana=[]
+    for dia in dias:
+        inicio_visible=datetime.combine(dia,time(primera_hora))
+        bloques=[]
+        for bloque in por_dia[dia]:
+            if bloque["fin"]>inicio_visible:
+                bloques.append({**bloque,"inicio":max(bloque["inicio"],inicio_visible)})
+        asignar_carriles(bloques)
+        semana.append({
+            "fecha":dia,"titulo":DIAS_SEMANA[dia.weekday()].capitalize(),"numero":dia.day,"es_hoy":dia==ahora.date(),
+            "bloques":[{
+                "arriba":round((bloque["inicio"]-inicio_visible).total_seconds()/60/minutos_visibles*100,2),
+                "alto":round((bloque["fin"]-bloque["inicio"]).total_seconds()/60/minutos_visibles*100,2),
+                "izquierda":bloque["izquierda"],"ancho":bloque["ancho"],
+                "tipo":bloque["evento"]["tipo"],"color":bloque["evento"].get("color"),
+                "titulo":bloque["evento"]["titulo"],"hora":f"{bloque['inicio']:%H:%M}",
+                "juntada_id":bloque["evento"]["juntada_id"],
+                "detalle":f"{bloque['evento']['titulo']} · {texto_horario(bloque['evento']['fecha'],bloque['evento']['hora_inicio'],bloque['evento']['hora_fin'])}",
+            } for bloque in bloques],
+        })
+    minutos_ahora=(ahora-datetime.combine(ahora.date(),time(primera_hora))).total_seconds()/60
+    return {
+        "dias":semana,
+        "horas":[{"texto":f"{hora:02d}","arriba":round((hora-primera_hora)*60/minutos_visibles*100,2)} for hora in range(primera_hora,24,2)],
+        "ahora":round(minutos_ahora/minutos_visibles*100,2) if 0<=minutos_ahora<=minutos_visibles else None,
+    }
+
+def proximas_juntadas(eventos,ahora):
+    proximas=[]
+    for evento in eventos:
+        if evento["tipo"] not in ("organizo","confirmada","tal_vez"):
+            continue
+        inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
+        if fin<=ahora:
+            continue
+        proximas.append((inicio,evento))
+    proximas.sort(key=lambda par:par[0])
+    return [{
+        **evento,
+        "dia":"Hoy" if evento["fecha"]==ahora.date() else DIAS_SEMANA[evento["fecha"].weekday()].capitalize(),
+        "numero":evento["fecha"].day,
+        "horario":texto_horario(evento["fecha"],evento["hora_inicio"],evento["hora_fin"]),
+        "van":[persona for persona in evento["personas"] if persona["estado"] in ("organiza","Si")],
+    } for _,evento in proximas[:MAXIMO_PROXIMAS]]
+
+@app.route("/",methods=["GET"])
+@login_requerido
+def mostrar_inicio():
+    ahora=datetime.now()
+    hoy=ahora.date()
+    lunes=hoy-timedelta(days=hoy.weekday())
+    hasta=max(lunes+timedelta(days=6),hoy+timedelta(days=60))
+    eventos=eventos_del_usuario(session["usuarioID"],lunes-timedelta(days=1),hasta)
+    return render_template(
+        "inicio.html",
+        hoy=nombre_del_dia(hoy),
+        proximas=proximas_juntadas(eventos,ahora),
+        semana=mi_semana(lunes,eventos,ahora),
+        titulo_semana=titulo_semana(lunes),
+    )
+
+@app.route("/calendario",methods=["GET"])
+@login_requerido
+def mostrar_calendario():
+    usuario_id=session["usuarioID"]
+
+    fecha_parametro=request.args.get("fecha")
+    try:
+        fecha_seleccionada=date.fromisoformat(fecha_parametro) if fecha_parametro else date.today()
+    except ValueError:
+        fecha_seleccionada=date.today()
+
+    semanas=modulo_calendario.Calendar(firstweekday=0).monthdatescalendar(
+        fecha_seleccionada.year, fecha_seleccionada.month
+    )
+    lunes=fecha_seleccionada-timedelta(days=fecha_seleccionada.weekday())
+    desde=semanas[0][0]-timedelta(days=1)
+    hasta=semanas[-1][-1]
+    eventos=eventos_del_usuario(usuario_id,desde,hasta)
 
     ahora=datetime.now()
     inicio_semana=datetime.combine(lunes,time(0))
@@ -409,6 +516,7 @@ def acciones_del_evento(evento,ahora):
     return {
         "responder":url_for("responder_juntada",juntada_id=juntada_id) if tipo in ("pendiente","tal_vez") else None,
         "cancelar":url_for("cancelar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
+        "cancelar_serie":url_for("cancelar_serie_de_juntadas",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo and evento.get("serie_id") else None,
         "reprogramar":url_for("mostrar_reprogramar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
@@ -604,6 +712,13 @@ def reprogramar(juntada_id):
     if not reprogramar_juntada(juntada_id,session["usuarioID"],reprogramacion,ahora):
         return "No se puede reprogramar esta juntada.", 400
     return redirect(url_for("mostrar_calendario",fecha=fecha_parametro,juntada=juntada_id))
+
+@app.route("/juntada/<int:juntada_id>/cancelar-serie",methods=["POST"])
+@login_requerido
+def cancelar_serie_de_juntadas(juntada_id):
+    if not cancelar_serie(juntada_id, session["usuarioID"], datetime.now()):
+        return "No se puede cancelar esta serie.", 400
+    return volver_al_calendario()
 
 @app.route("/juntada/<int:juntada_id>/abandonar",methods=["POST"])
 @login_requerido

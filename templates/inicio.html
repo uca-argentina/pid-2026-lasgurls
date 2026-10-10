@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block titulo %}Inicio{% endblock %}
+
+{% block contenido %}
+<div class="inicio">
+  <div class="inicio-encabezado">
+    <div>
+      <h1 class="inicio-saludo">Hola, {{ usuario_actual.nombre.split()[0] }}</h1>
+      <p class="inicio-fecha">{{ hoy }}</p>
+    </div>
+    <div class="inicio-acciones">
+      <a href="{{ url_for('mostrar_nueva_juntada') }}" class="boton-principal">Nueva juntada</a>
+      <a href="{{ url_for('mostrar_nueva_agenda') }}" class="boton-neutro">Nuevo evento</a>
+    </div>
+  </div>
+
+  <div class="inicio-columnas">
+    <section class="inicio-tarjeta">
+      <h2 class="inicio-titulo">
+        Invitaciones pendientes
+        {% if notificaciones_juntadas %}<span class="inicio-contador">{{ notificaciones_juntadas|length }}</span>{% endif %}
+      </h2>
+      {% if notificaciones_juntadas %}
+      <ul class="panel-lista inicio-lista">
+        {% for item in notificaciones_juntadas %}
+        {% include "_invitacion.html" %}
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="inicio-vacio">
+        <span class="aviso-icono aviso-confirmacion">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        </span>
+        Estás al día. No tenés invitaciones para responder.
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="inicio-tarjeta">
+      <h2 class="inicio-titulo">Próximas juntadas</h2>
+      {% if proximas %}
+      <ul class="inicio-proximas">
+        {% for evento in proximas %}
+        <li>
+          <a class="inicio-proxima" href="{{ url_for('mostrar_calendario', fecha=evento.fecha.isoformat(), juntada=evento.juntada_id) }}">
+            <span class="inicio-dia{% if evento.dia == 'Hoy' %} inicio-dia-hoy{% endif %}">
+              <span>{{ evento.dia }}</span>
+              <strong>{{ evento.numero }}</strong>
+            </span>
+            <span class="inicio-proxima-info">
+              <span class="inicio-proxima-titulo">
+                <i class="evento-{{ evento.tipo }}"{% if evento.color %} style="--color-evento: {{ evento.color }}"{% endif %}></i>
+                {{ evento.titulo }}
+              </span>
+              <span class="inicio-proxima-detalle">{{ evento.horario }} · {{ evento.detalle }}</span>
+            </span>
+            {% if evento.van %}
+            <span class="inicio-avatares" title="{{ evento.van|map(attribute='nombre')|join(', ') }}">
+              {% for persona in evento.van[:3] %}
+              <span class="avatar avatar-chico">{{ persona.iniciales }}</span>
+              {% endfor %}
+              {% if evento.van|length > 3 %}<span class="avatar avatar-chico inicio-avatar-mas">+{{ evento.van|length - 3 }}</span>{% endif %}
+            </span>
+            {% endif %}
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="inicio-vacio">No tenés juntadas próximas. <a href="{{ url_for('mostrar_nueva_juntada') }}">Armá una</a>.</div>
+      {% endif %}
+      <a href="{{ url_for('mostrar_calendario') }}" class="inicio-ver-mas">Ver calendario →</a>
+    </section>
+  </div>
+
+  <section class="inicio-tarjeta">
+    <div class="inicio-titulo-con-detalle">
+      <h2 class="inicio-titulo">Tu semana</h2>
+      <span class="inicio-fecha">{{ titulo_semana }}</span>
+    </div>
+    <div class="mini-semana">
+      <div class="mini-semana-encabezado">
+        <span></span>
+        {% for dia in semana.dias %}
+        <a class="mini-semana-dia{% if dia.es_hoy %} mini-semana-hoy{% endif %}" href="{{ url_for('mostrar_calendario', fecha=dia.fecha.isoformat()) }}">
+          <span>{{ dia.titulo }}</span>
+          <strong>{{ dia.numero }}</strong>
+        </a>
+        {% endfor %}
+      </div>
+      <div class="mini-semana-cuerpo">
+        <div class="mini-semana-horas" aria-hidden="true">
+          {% for hora in semana.horas %}
+          <span style="top: {{ hora.arriba }}%">{{ hora.texto }}</span>
+          {% endfor %}
+        </div>
+        {% for dia in semana.dias %}
+        <div class="mini-semana-columna{% if dia.es_hoy %} mini-semana-columna-hoy{% endif %}">
+          {% for hora in semana.horas %}
+          <span class="mini-semana-linea" style="top: {{ hora.arriba }}%"></span>
+          {% endfor %}
+          {% if not dia.bloques %}
+          <span class="mini-semana-libre">Libre</span>
+          {% endif %}
+          {% for bloque in dia.bloques %}
+          <a class="mini-evento evento-{{ bloque.tipo }}" title="{{ bloque.detalle }}"
+             href="{{ url_for('mostrar_calendario', fecha=dia.fecha.isoformat(), juntada=bloque.juntada_id) if bloque.juntada_id else url_for('mostrar_calendario', fecha=dia.fecha.isoformat()) }}"
+             style="top: {{ bloque.arriba }}%; height: {{ bloque.alto }}%; left: {{ bloque.izquierda }}%; width: {{ bloque.ancho }}%;{% if bloque.color %} --color-evento: {{ bloque.color }};{% endif %}">
+            <strong>{{ bloque.titulo }}</strong>
+            <span>{{ bloque.hora }}</span>
+          </a>
+          {% endfor %}
+          {% if dia.es_hoy and semana.ahora is not none %}
+          <span class="mini-semana-ahora" style="top: {{ semana.ahora }}%"></span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
