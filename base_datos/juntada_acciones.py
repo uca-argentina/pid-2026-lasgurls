@@ -26,6 +26,7 @@ def guardar(juntada):
                 categoria_id=juntada.categoria_id,
                 visibilidad=juntada.visibilidad,
                 repeticion=repeticion,
+                ubicacion=juntada.ubicacion or None,
             )
             sesion.add(juntada_tabla)
             filas.append(juntada_tabla)

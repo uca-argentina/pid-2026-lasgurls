@@ -14,3 +14,4 @@ class AgendaTabla(Base):
     hora_fin = Column(Time, nullable=False)
     categoria_id = Column(Integer, ForeignKey(CategoriaTabla.id), nullable=True)
     visibilidad=Column(String(20),nullable=False,default="ocupado")
+    ubicacion=Column(String(120),nullable=True)
