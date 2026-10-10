@@ -21,6 +21,7 @@
       <input type="text" id="titulo" name="titulo" placeholder="¿Qué van a hacer?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título a la juntada.">
     </div>
 
+    {% include "_elegir_lugar.html" %}
     {% include "_elegir_categoria.html" %}
     {% include "_elegir_visibilidad.html" %}
 

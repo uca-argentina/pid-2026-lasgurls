@@ -810,6 +810,16 @@ strong.grilla-linea {
   font-weight: 500;
 }
 
+.dialogo .detalle-lugar {
+  margin-bottom: 6px;
+  color: var(--color-texto);
+  overflow-wrap: anywhere;
+}
+
+.detalle-lugar a {
+  color: var(--color-salvia-oscuro);
+}
+
 .dialogo-cerrar {
   margin-right: auto;
 }

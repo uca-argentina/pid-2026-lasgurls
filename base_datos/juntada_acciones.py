@@ -26,6 +26,7 @@ def guardar(juntada):
                 categoria_id=juntada.categoria_id,
                 visibilidad=juntada.visibilidad,
                 repeticion=repeticion,
+                ubicacion=juntada.ubicacion or None,
             )
             sesion.add(juntada_tabla)
             filas.append(juntada_tabla)
@@ -114,7 +115,6 @@ def cancelar_juntada(juntada_id, organizador_id, ahora):
             return False
         consulta = select(JuntadaInvitadosTabla.usuario_id).where(
             JuntadaInvitadosTabla.juntada_id == juntada_id,
-            JuntadaInvitadosTabla.estado != "No",
         )
         texto = f"{nombre_de_usuario(sesion, organizador_id)} canceló {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
         notificar(sesion, sesion.scalars(consulta).all(), "cancelacion", texto, ahora)

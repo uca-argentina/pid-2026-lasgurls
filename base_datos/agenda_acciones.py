@@ -13,7 +13,8 @@ def guardar(agenda):
             hora_inicio=agenda.hora_inicio,
             hora_fin=agenda.hora_fin,
             categoria_id=agenda.categoria_id,
-            visibilidad=agenda.visibilidad
+            visibilidad=agenda.visibilidad,
+            ubicacion=agenda.ubicacion or None
         )
         sesion.add(agenda_tabla)
         sesion.commit()

@@ -16,3 +16,4 @@ class JuntadaTabla(Base):
     visibilidad=Column(String(20),nullable=False,default="ocupado")
     serie_id = Column(Integer, nullable=True)
     repeticion = Column(String(20), nullable=True)
+    ubicacion=Column(String(120),nullable=True)

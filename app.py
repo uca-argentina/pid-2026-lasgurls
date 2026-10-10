@@ -11,6 +11,7 @@ from dominio.juntada.recurrencia import Recurrencia, un_anio_despues, texto_de_r
 from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
+from dominio.ubicacion import Ubicacion
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.secretos import SECRET_KEY
@@ -300,6 +301,7 @@ def mostrar_calendario():
             "fecha":agenda.fecha,"titulo":agenda.titulo,"hora_inicio":agenda.hora_inicio,"hora_fin":agenda.hora_fin,
             "tipo":"personal","juntada_id":None,"agenda_id":agenda.id,"categoria":categoria,"color":color,
             "detalle":que_ven,
+            "ubicacion":agenda.ubicacion,
         })
 
     organizadas={}
@@ -315,6 +317,7 @@ def mostrar_calendario():
             "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(g.usuario.nombre,"organiza",es_vos=True)]+[persona(nombre,estado) for nombre,estado in invitados],
+            "ubicacion":juntada.ubicacion,
         })
 
     invitaciones=[
@@ -332,6 +335,7 @@ def mostrar_calendario():
             "detalle":f"Te invitó {organizador} · {respuesta}"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(organizador,"organiza")]+invitados_por_juntada.get(juntada.id,[]),
+            "ubicacion":juntada.ubicacion,
         })
 
     ahora=datetime.now()
@@ -361,6 +365,8 @@ def mostrar_calendario():
                 "cuando":f"{nombre_del_dia(evento['fecha'])} · {texto_horario(evento['fecha'],evento['hora_inicio'],evento['hora_fin'])}",
                 "juntadaID":evento["juntada_id"],
                 "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
+                "ubicacion":evento["ubicacion"],
+                "mapa":Ubicacion(evento["ubicacion"]).enlaceMapa(),
                 **acciones_del_evento(evento,ahora),
             })
 
@@ -453,6 +459,7 @@ def crear_agenda():
             categoria_id=categoria_id,
             visibilidad=visibilidad,
             comparte_detalles=g.usuario.compartir_disponibilidad,
+            ubicacion=request.form.get("ubicacion",""),
         )
     except ValueError as error:
         return formulario_evento(fecha_parametro, error=str(error)), 400
@@ -526,6 +533,7 @@ def crear_juntada():
             visibilidad=visibilidad,
             comparte_detalles=g.usuario.compartir_disponibilidad,
             recurrencia=recurrencia_del_formulario(datetime.strptime(fecha_parametro, "%Y-%m-%d").date()),
+            ubicacion=request.form.get("ubicacion",""),
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
