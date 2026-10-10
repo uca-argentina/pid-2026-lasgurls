@@ -282,6 +282,16 @@
     return formulario;
   }
 
+  function parrafoDeLugar(evento){
+    var parrafo=crear("p","detalle-lugar",evento.ubicacion+" · ");
+    var enlace=crear("a","","Ver en el mapa");
+    enlace.href=evento.mapa;
+    enlace.target="_blank";
+    enlace.rel="noopener";
+    parrafo.appendChild(enlace);
+    return parrafo;
+  }
+
   function seccionDeComentarios(evento){
     var seccion=crear("div","detalle-personas detalle-comentarios");
     seccion.appendChild(crear("p","detalle-personas-titulo","Comentarios"));
@@ -364,6 +374,7 @@
     arriba.appendChild(cruzCerrar());
 
     var contenido = [arriba, tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
+    if(evento.ubicacion)contenido.splice(4,0,parrafoDeLugar(evento));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));
     if(acciones.children.length)contenido.push(acciones);
