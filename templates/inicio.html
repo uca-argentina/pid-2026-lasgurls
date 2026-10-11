@@ -68,7 +68,7 @@
         {% endfor %}
       </ul>
       {% else %}
-      <div class="inicio-vacio">No tenés juntadas próximas. <a href="{{ url_for('mostrar_nueva_juntada') }}">Armá una</a>.</div>
+      <div class="inicio-vacio"><span>No tenés juntadas próximas. <a href="{{ url_for('mostrar_nueva_juntada') }}">Armá una</a>.</span></div>
       {% endif %}
       <a href="{{ url_for('mostrar_calendario') }}" class="inicio-ver-mas">Ver calendario →</a>
     </section>

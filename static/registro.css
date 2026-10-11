@@ -598,6 +598,12 @@ body {
   font-weight: 600;
 }
 
+.calendario-barra .ver-mes {
+  display: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .calendario-layout {
   display: flex;
   align-items: flex-start;
@@ -984,6 +990,10 @@ strong.grilla-linea {
 
 .dialogo-arriba + .detalle-tipo {
   padding-right: 64px;
+}
+
+.dialogo-arriba + h3 {
+  padding-right: 28px;
 }
 
 .dialogo-menu {
@@ -2016,6 +2026,14 @@ strong.grilla-linea {
     width: 100%;
   }
 
+  .calendario-barra .ver-mes {
+    display: inline-block;
+  }
+
+  .calendario-lateral:not(.mes-abierto) {
+    display: none;
+  }
+
   .leyenda-calendario {
     flex-direction: row;
     flex-wrap: wrap;
@@ -2038,6 +2056,24 @@ strong.grilla-linea {
 
   .header-marca .logo-texto {
     display: none;
+  }
+
+  .header-contenido {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .header-link {
+    padding: 0 5px;
+    font-size: 0.85rem;
+  }
+
+  .header-acciones {
+    gap: 4px;
+  }
+
+  .dialogo-acciones {
+    flex-wrap: wrap;
   }
 
   .marca .logo-texto {
