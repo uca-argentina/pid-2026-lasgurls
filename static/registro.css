@@ -986,6 +986,10 @@ strong.grilla-linea {
   padding-right: 64px;
 }
 
+.dialogo-arriba + h3 {
+  padding-right: 28px;
+}
+
 .dialogo-menu {
   position: relative;
 }
@@ -2038,6 +2042,24 @@ strong.grilla-linea {
 
   .header-marca .logo-texto {
     display: none;
+  }
+
+  .header-contenido {
+    gap: 8px;
+    padding: 0 12px;
+  }
+
+  .header-link {
+    padding: 0 5px;
+    font-size: 0.85rem;
+  }
+
+  .header-acciones {
+    gap: 4px;
+  }
+
+  .dialogo-acciones {
+    flex-wrap: wrap;
   }
 
   .marca .logo-texto {

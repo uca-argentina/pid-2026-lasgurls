@@ -208,12 +208,6 @@
     return true;
   };
 
-  function botonCerrar(texto) {
-    var formulario = crear("form", "dialogo-cerrar");
-    formulario.method = "dialog";
-    formulario.appendChild(crear("button", "boton-neutro", texto));
-    return formulario;
-  }
 
   function formularioPost(url, campos, texto, clase) {
     var formulario = crear("form");
@@ -397,13 +391,14 @@
     var dia = datos.dias.find(function (item) { return item.fecha === fecha; });
     var parametros = { fecha: fecha, hora: textoHora(inicio) };
     var acciones = crear("div", "dialogo-acciones");
-    acciones.appendChild(botonCerrar("Cancelar"));
     var evento = crear("a", "boton-neutro", "Nuevo evento");
     evento.href = conParametros(datos.urls.nuevo_evento, parametros);
     var juntada = crear("a", "boton-principal", "Nueva juntada");
     juntada.href = conParametros(datos.urls.nueva_juntada, parametros);
     acciones.append(evento, juntada);
-    dialogo.replaceChildren(crear("h3", "", "¿Qué querés agendar?"), crear("p", "detalle-cuando", dia.nombre + " a las " + textoHora(inicio)), acciones);
+    var arriba=crear("div","dialogo-arriba");
+    arriba.appendChild(cruzCerrar());
+    dialogo.replaceChildren(arriba, crear("h3", "", "¿Qué querés agendar?"), crear("p", "detalle-cuando", dia.nombre + " a las " + textoHora(inicio)), acciones);
     dialogo.showModal();
   }
 
