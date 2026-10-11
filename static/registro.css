@@ -598,6 +598,12 @@ body {
   font-weight: 600;
 }
 
+.calendario-barra .ver-mes {
+  display: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .calendario-layout {
   display: flex;
   align-items: flex-start;
@@ -2018,6 +2024,14 @@ strong.grilla-linea {
 
   .calendario-lateral {
     width: 100%;
+  }
+
+  .calendario-barra .ver-mes {
+    display: inline-block;
+  }
+
+  .calendario-lateral:not(.mes-abierto) {
+    display: none;
   }
 
   .leyenda-calendario {

@@ -16,10 +16,11 @@
     <script type="application/json" data-datos-calendario>{{ datos|tojson }}</script>
 
     <div class="semana-navegacion calendario-barra">
-      <a href="{{ url_for('mostrar_calendario', fecha=semana_anterior.isoformat()) }}" class="boton-neutro boton-chico" aria-label="Semana anterior">‹</a>
-      <a href="{{ url_for('mostrar_calendario', fecha=semana_siguiente.isoformat()) }}" class="boton-neutro boton-chico" aria-label="Semana siguiente">›</a>
+      <a href="{{ url_for('mostrar_calendario', fecha=semana_anterior.isoformat()) }}" class="boton-neutro boton-chico" aria-label="Semana anterior" data-anterior data-semana="{{ url_for('mostrar_calendario', fecha=semana_anterior.isoformat()) }}">‹</a>
+      <a href="{{ url_for('mostrar_calendario', fecha=semana_siguiente.isoformat()) }}" class="boton-neutro boton-chico" aria-label="Semana siguiente" data-siguiente data-semana="{{ url_for('mostrar_calendario', fecha=semana_siguiente.isoformat()) }}">›</a>
       <a href="{{ url_for('mostrar_calendario') }}" class="boton-neutro boton-chico">Hoy</a>
-      <span class="calendario-titulo">{{ titulo }}</span>
+      <button type="button" class="boton-neutro boton-chico ver-mes" data-ver-mes aria-expanded="false">Ver mes</button>
+      <span class="calendario-titulo" data-titulo-calendario data-semana="{{ titulo }}">{{ titulo }}</span>
     </div>
 
     <div class="calendario-layout">

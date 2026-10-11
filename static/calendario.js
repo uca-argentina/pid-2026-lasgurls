@@ -186,8 +186,48 @@
     });
   }
 
+  var mesAbierto=false;
+
+  function diaCorrido(fecha,dias){
+    var dia=new Date(fecha+"T12:00");
+    dia.setDate(dia.getDate()+dias);
+    return fechaIso(dia);
+  }
+
+  function aplicarMes(){
+    var lateral=document.querySelector(".calendario-lateral");
+    var boton=document.querySelector("[data-ver-mes]");
+    if(!lateral||!boton)return;
+    lateral.classList.toggle("mes-abierto",mesAbierto);
+    boton.textContent=mesAbierto?"Ocultar mes":"Ver mes";
+    boton.setAttribute("aria-expanded",mesAbierto);
+  }
+
+  function acomodarParaCelu(){
+    var anterior=document.querySelector("[data-anterior]");
+    var siguiente=document.querySelector("[data-siguiente]");
+    var titulo=document.querySelector("[data-titulo-calendario]");
+    if(!anterior||!siguiente||!titulo)return;
+    if(ESTRECHO.matches){
+      anterior.href=conParametros(window.location.pathname,{fecha:diaCorrido(datos.fecha,-1)});
+      siguiente.href=conParametros(window.location.pathname,{fecha:diaCorrido(datos.fecha,1)});
+      anterior.setAttribute("aria-label","Dia anterior");
+      siguiente.setAttribute("aria-label","Dia siguiente");
+      var dia=datos.dias.find(function(item){return item.fecha===datos.fecha;});
+      titulo.textContent=dia?dia.nombre:titulo.dataset.semana;
+    }else{
+      anterior.href=anterior.dataset.semana;
+      siguiente.href=siguiente.dataset.semana;
+      anterior.setAttribute("aria-label","Semana anterior");
+      siguiente.setAttribute("aria-label","Semana siguiente");
+      titulo.textContent=titulo.dataset.semana;
+    }
+    aplicarMes();
+  }
+
   function elegirDia(fecha, guardarHistorial) {
     datos.fecha = fecha;
+    mesAbierto=false;
     document.querySelectorAll(".mini-calendario-dia").forEach(function (link) {
       link.classList.toggle("mini-calendario-dia-seleccionado", link.dataset.fecha === fecha);
     });
@@ -196,6 +236,7 @@
     });
     if (guardarHistorial) window.history.pushState({}, "", conParametros(window.location.href, { fecha: fecha }));
     dibujar(ESTRECHO.matches);
+    acomodarParaCelu();
   }
 
   window.navegarLocalmente = function (url, guardarHistorial) {
@@ -436,11 +477,22 @@
     });
   });
 
+  document.addEventListener("click",function(evento){
+    if(evento.target.closest("[data-ver-mes]")){
+      mesAbierto=!mesAbierto;
+      aplicarMes();
+    }else if(evento.target.closest(".mini-calendario-dia")){
+      mesAbierto=false;
+    }
+  });
+
   document.addEventListener("contenido-actualizado", function () {
     if (leerDatos()) dibujar(true);
+    if(datos)acomodarParaCelu();
   });
   ESTRECHO.addEventListener("change", function () {
     dibujar(true);
+    if(datos)acomodarParaCelu();
   });
   setInterval(function () {
     if (datos) dibujar(false);
@@ -470,5 +522,6 @@
   document.addEventListener("visibilitychange", actualizarDatos);
 
   if (leerDatos()) dibujar(true);
+  if(datos)acomodarParaCelu();
   if(datos)abrirJuntadaPedida();
 })();
