@@ -7,7 +7,7 @@ from base_datos.usuario_tabla import UsuarioTabla
 MAXIMO_TEXTO = 255
 
 
-def notificar(sesion, usuarios_ids, tipo, texto, ahora, juntada=None):
+def notificar(sesion, usuarios_ids, tipo, texto, ahora, juntada=None, encuesta_id=None):
     for usuario_id in set(usuarios_ids):
         sesion.add(NotificacionTabla(
             usuario_id=usuario_id,
@@ -15,6 +15,7 @@ def notificar(sesion, usuarios_ids, tipo, texto, ahora, juntada=None):
             texto=texto[:MAXIMO_TEXTO],
             juntada_id=juntada.id if juntada is not None else None,
             fecha_juntada=juntada.fecha if juntada is not None else None,
+            encuesta_id=encuesta_id,
             fecha_hora=ahora,
         ))
 

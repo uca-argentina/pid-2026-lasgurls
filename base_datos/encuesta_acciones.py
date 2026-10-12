@@ -25,7 +25,7 @@ def crear(encuesta, ahora):
         for usuario_id in encuesta.invitados:
             sesion.add(EncuestaInvitadoTabla(encuesta_id=fila.id, usuario_id=usuario_id))
         texto = f"{nombre_de_usuario(sesion, encuesta.organizador)} armó la encuesta {resaltar(encuesta.titulo)}: votá cuándo te queda mejor"
-        notificar(sesion, encuesta.invitados, "encuesta", texto, ahora)
+        notificar(sesion, encuesta.invitados, "encuesta", texto, ahora, encuesta_id=fila.id)
         sesion.commit()
         return fila.id
 
@@ -86,7 +86,7 @@ def cerrar(encuesta_id, usuario_id, ahora):
         fila.estado = dominio.estado
         texto = (f"{nombre_de_usuario(sesion, dominio.organizador)} cerró la encuesta {resaltar(dominio.titulo)} "
                  f"sin elegir fecha: la juntada se cancela")
-        notificar(sesion, dominio.invitados, "cancelacion", texto, ahora)
+        notificar(sesion, dominio.invitados, "cancelacion", texto, ahora, encuesta_id=encuesta_id)
         sesion.commit()
 
 

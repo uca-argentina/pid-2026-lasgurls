@@ -36,14 +36,21 @@
             {{ (iconos[aviso.tipo] or '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>')|safe }}
           </svg>
         </span>
-        {% if aviso.juntada_id %}
-        <a class="aviso-cuerpo" href="{{ url_for('mostrar_calendario', fecha=aviso.fecha_juntada.isoformat(), juntada=aviso.juntada_id) }}">
+        {% if aviso.encuesta_id %}
+        {% set destino = url_for('mostrar_encuesta', encuesta_id=aviso.encuesta_id) %}
+        {% elif aviso.juntada_id %}
+        {% set destino = url_for('mostrar_calendario', fecha=aviso.fecha_juntada.isoformat(), juntada=aviso.juntada_id) %}
+        {% else %}
+        {% set destino = "" %}
+        {% endif %}
+        {% if destino %}
+        <a class="aviso-cuerpo" href="{{ destino }}">
         {% else %}
         <span class="aviso-cuerpo">
         {% endif %}
           <span class="aviso-texto">{% for parte in aviso.texto.split("**") %}{% if loop.index is even %}<strong>{{ parte }}</strong>{% else %}{{ parte }}{% endif %}{% endfor %}</span>
           <span class="aviso-cuando">{{ aviso.fecha_hora|hace }}</span>
-        {% if aviso.juntada_id %}</a>{% else %}</span>{% endif %}
+        {% if destino %}</a>{% else %}</span>{% endif %}
       </li>
       {% endfor %}
     </ul>

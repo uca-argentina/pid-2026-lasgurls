@@ -10,6 +10,7 @@ class NotificacionTabla(Base):
     tipo = Column(String(20), nullable=False)
     texto = Column(String(255), nullable=False)
     juntada_id = Column(Integer, nullable=True)
+    encuesta_id = Column(Integer, nullable=True)
     fecha_juntada = Column(Date, nullable=True)
     leida = Column(Boolean, nullable=False, default=False)
     fecha_hora = Column(DateTime, nullable=False)
