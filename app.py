@@ -719,7 +719,7 @@ def votar_encuesta(encuesta_id):
 @login_requerido
 def cerrar_encuesta(encuesta_id):
     try:
-        encuesta_acciones.cerrar(encuesta_id,session["usuarioID"])
+        encuesta_acciones.cerrar(encuesta_id,session["usuarioID"],datetime.now())
     except ValueError as error:
         return mostrar_encuesta(encuesta_id,str(error)),400
     return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))

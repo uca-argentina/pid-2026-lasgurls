@@ -12,8 +12,11 @@
     </div>
 </div>
 
-  <p class="fila-detalle">
-    Encuesta hecha por {{ "vos" if encuesta.es_organizador else encuesta.organizador }} · {{ "Abierta" if abierta else "Cerrada" }}
+    <p class="fila-detalle">
+    Encuesta hecha por {{ "vos" if encuesta.es_organizador else encuesta.organizador }} ·
+    {% if abierta %}Abierta
+    {% elif encuesta.juntada_id %}<span style="color: var(--color-salvia); font-weight: 600;">Fecha confirmada</span>
+    {% else %}<span style="color: #a4473b; font-weight: 600;">Cancelada</span>{% endif %}
   </p>
 
 {% if error %}
@@ -97,7 +100,7 @@
     <p class="campo-ayuda">Todavía nadie votó, así que no hay una opción para confirmar.</p>
     {% endif %}
         <form method="POST" action="{{ url_for('cerrar_encuesta', encuesta_id=encuesta.id) }}" style="margin-top: 20px;">
-              <p class="campo-ayuda" style="margin-bottom: 12px;">También podés cerrar la encuesta sin elegir una fecha.</p>
+            <p class="campo-ayuda" style="margin-bottom: 12px;">También podés cerrar la encuesta sin elegir una fecha. Se cancela la juntada y se avisa a los invitados.</p>
       <button type="submit" class="boton-neutro">Cerrar sin confirmar</button>
     </form>
   </div>
@@ -111,7 +114,7 @@
     {% elif encuesta.juntada_id %}
     Se confirmó una fecha, pero esa juntada ya no existe.
     {% else %}
-    La encuesta se cerró sin confirmar una fecha.
+    La encuesta se cerró sin elegir una fecha: la juntada se canceló.
     {% endif %}
   </p>
   {% endif %}

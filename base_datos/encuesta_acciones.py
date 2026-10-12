@@ -75,7 +75,8 @@ def votar(encuesta_id, usuario_id, opciones_ids):
         sesion.commit()
 
 
-def cerrar(encuesta_id, usuario_id):
+def cerrar(encuesta_id, usuario_id, ahora):
+    """Cierra la encuesta sin elegir fecha: no se hace la juntada, y se avisa a los invitados."""
     with Session() as sesion:
         cargada = _cargar(sesion, encuesta_id)
         if cargada is None:
@@ -83,6 +84,9 @@ def cerrar(encuesta_id, usuario_id):
         fila, _, dominio = cargada
         dominio.cerrar(usuario_id)
         fila.estado = dominio.estado
+        texto = (f"{nombre_de_usuario(sesion, dominio.organizador)} cerró la encuesta {resaltar(dominio.titulo)} "
+                f"sin elegir fecha: la juntada se cancela")
+        notificar(sesion, dominio.invitados, "cancelacion", texto, ahora)
         sesion.commit()
 
 
