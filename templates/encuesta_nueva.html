@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block titulo %}Nueva encuesta{% endblock %}
+
+{% macro fila_opcion(fecha="", hora_inicio="", hora_fin="") %}
+<div class="fila-horarios opcion-encuesta">
+  <div class="campo">
+    <label>Fecha</label>
+    <input type="date" name="fecha" min="{{ hoy }}" value="{{ fecha }}" required>
+  </div>
+  <div class="campo">
+    <label>Desde</label>
+    <input type="time" name="hora_inicio" value="{{ hora_inicio }}" required>
+  </div>
+  <div class="campo">
+    <label>Hasta</label>
+    <input type="time" name="hora_fin" value="{{ hora_fin }}" required>
+  </div>
+  <button type="button" class="boton-texto" data-quitar>Quitar</button>
+</div>
+{% endmacro %}
+
+{% block contenido %}
+<div class="tarjeta-formulario tarjeta-ancha">
+  <div class="encabezado-tarjeta">
+    <h2>Nueva encuesta</h2>
+    <div class="encabezado-acciones">
+      <a href="{{ url_for('mostrar_inicio') }}" class="boton-texto">Cancelar</a>
+    </div>
+  </div>
+
+  {% if error %}
+  <p class="mensaje-error">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST" action="{{ url_for('crear_encuesta') }}">
+    <div class="campo">
+      <label for="titulo">Título</label>
+      <input type="text" id="titulo" name="titulo" placeholder="¿Qué quieren organizar?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título a la encuesta.">
+    </div>
+
+    <div class="seccion seccion-formulario">
+      <h3 class="titulo-seccion">¿Con quién?</h3>
+      <ul class="lista" data-requiere-uno="Elegí al menos un amigo para invitar.">
+        {% for amigo in amigos %}
+        <li class="fila">
+          <label class="fila-seleccionable">
+            <input type="checkbox" name="invitados" value="{{ amigo.id }}"{% if amigo.id in seleccionados %} checked{% endif %}>
+            <span class="avatar avatar-chico">{{ amigo.nombre|iniciales }}</span>
+            <span class="fila-info">
+              <span class="fila-nombre">{{ amigo.nombre }}</span>
+              <span class="fila-detalle">{{ amigo.email }}</span>
+            </span>
+          </label>
+        </li>
+        {% else %}
+        <li class="fila fila-vacia">Todavía no tenés amigos para invitar. Agregalos desde&nbsp;<a href="{{ url_for('mostrar_amistad') }}">Amistades</a>.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="seccion seccion-formulario">
+      <h3 class="titulo-seccion">¿Cuándo? Proponé de {{ minimo }} a {{ maximo }} opciones</h3>
+      <div data-opciones-encuesta data-maximo="{{ maximo }}" data-minimo="{{ minimo }}">
+        {% for fecha, hora_inicio, hora_fin in opciones %}
+        {{ fila_opcion(fecha, hora_inicio, hora_fin) }}
+        {% endfor %}
+      </div>
+      <button type="button" class="boton-neutro boton-chico" data-agregar-opcion>Agregar otra opción</button>
+      <template id="plantilla-opcion">{{ fila_opcion() }}</template>
+    </div>
+
+    <button type="submit" class="boton-enviar">Crear encuesta</button>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='encuesta_opciones.js') }}" defer></script>
+{% endblock %}

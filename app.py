@@ -12,6 +12,8 @@ from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
 from dominio.ubicacion import Ubicacion
+from dominio.encuesta import Encuesta, MINIMO_OPCIONES, MAXIMO_OPCIONES 
+import base_datos.encuesta_acciones as encuesta_acciones
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.secretos import SECRET_KEY
@@ -648,6 +650,48 @@ def crear_juntada():
 
     guardar_juntada(juntada)
     return redirect(url_for("mostrar_calendario", fecha=fecha_parametro))
+
+def formulario_encuesta(amigos,seleccionados,error=None,opciones=None):
+    return render_template(
+        "encuesta_nueva.html",amigos=amigos,seleccionados=seleccionados,error=error,
+        opciones=opciones or [("","",""),("","","")],
+        hoy=date.today().isoformat(),minimo=MINIMO_OPCIONES,maximo=MAXIMO_OPCIONES,
+    )
+
+@app.route("/encuesta/nueva",methods=["GET"])
+@login_requerido
+def mostrar_nueva_encuesta():
+    return formulario_encuesta(obtener_amigos(session["usuarioID"]),[])
+
+@app.route("/encuesta/nueva",methods=["POST"])
+@login_requerido
+def crear_encuesta():
+    usuario_id=session["usuarioID"]
+    invitados_ids=[int(id) for id in request.form.getlist("invitados")]
+    amigos=obtener_amigos(usuario_id)
+    amigos_ids=[amigo.id for amigo in amigos]
+    opciones_formulario=list(zip(
+        request.form.getlist("fecha"),request.form.getlist("hora_inicio"),request.form.getlist("hora_fin"),
+    ))
+
+    if not set(invitados_ids).issubset(set(amigos_ids)):
+        seleccionados=[id for id in invitados_ids if id in amigos_ids]
+        return formulario_encuesta(amigos,seleccionados,"Solo podés invitar a tus amigos.",opciones_formulario),400
+
+    try:
+        if any(not fecha for fecha,_,_ in opciones_formulario):
+            raise ValueError("Elegí la fecha de cada opción")
+        encuesta=Encuesta(
+            usuario_id,
+            request.form.get("titulo",""),
+            [(datetime.strptime(fecha,"%Y-%m-%d").strftime("%d/%m/%Y"),inicio,fin) for fecha,inicio,fin in opciones_formulario],
+            invitados_ids,
+        )
+    except ValueError as error:
+        return formulario_encuesta(amigos,invitados_ids,str(error),opciones_formulario),400
+
+    encuesta_acciones.crear(encuesta,datetime.now())
+    return redirect(url_for("mostrar_inicio"))
 
 @app.route("/juntada/<int:juntada_id>/responder",methods=["POST"])
 @login_requerido
