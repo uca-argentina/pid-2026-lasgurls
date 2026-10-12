@@ -83,7 +83,11 @@
         <a class="inicio-proxima" href="{{ url_for('mostrar_encuesta', encuesta_id=encuesta.id) }}">
           <span class="inicio-proxima-info">
             <span class="inicio-proxima-titulo">{{ encuesta.titulo }}</span>
-            <span class="inicio-proxima-detalle">{{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }} · {{ "Abierta" if encuesta.estado == "abierta" else "Cerrada" }}</span>
+                        <span class="inicio-proxima-detalle">{{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }} ·
+              {% if encuesta.estado == "abierta" %}Abierta
+              {% elif encuesta.juntada_id %}<span style="color: var(--color-salvia); font-weight: 600;">Fecha confirmada</span>
+              {% else %}<span style="color: #a4473b; font-weight: 600;">Cancelada</span>{% endif %}
+            </span>
           </span>
         </a>
       </li>
