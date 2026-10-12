@@ -38,7 +38,8 @@
       <label for="titulo">Título</label>
       <input type="text" id="titulo" name="titulo" placeholder="¿Qué quieren organizar?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título a la encuesta.">
     </div>
-
+    
+    {% include "_elegir_lugar.html" %}
     <div class="seccion seccion-formulario">
       <h3 class="titulo-seccion">¿Con quién?</h3>
       <ul class="lista" data-requiere-uno="Elegí al menos un amigo para invitar.">

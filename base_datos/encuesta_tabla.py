@@ -11,6 +11,7 @@ class EncuestaTabla(Base):
     estado = Column(String(20), nullable=False, default="abierta")
     juntada_id = Column(Integer, nullable=True)
     fecha_creacion = Column(DateTime, nullable=False)
+    ubicacion = Column(String(120), nullable=True)
 
 
 class EncuestaOpcionTabla(Base):

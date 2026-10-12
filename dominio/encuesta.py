@@ -1,6 +1,7 @@
 from datetime import datetime
 from dominio.modulo_utilidades.parseo_hora_fecha import parsear_fecha, parsear_hora
 from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEvento
+from dominio.ubicacion import Ubicacion
 
 MINIMO_OPCIONES = 2
 MAXIMO_OPCIONES = 5
@@ -24,13 +25,13 @@ class OpcionEncuesta:
         opcion = cls.__new__(cls)
         opcion.fecha, opcion.hora_inicio, opcion.hora_fin = fecha, hora_inicio, hora_fin
         return opcion
-    
+
     def clave(self):
         return (self.fecha, self.hora_inicio, self.hora_fin)
 
 
 class Encuesta:
-    def __init__(self, organizador, titulo, opciones, invitados, ahora=None):
+    def __init__(self, organizador, titulo, opciones, invitados, ahora=None, ubicacion=""):
         """opciones: lista de tuplas (fecha "DD/MM/AAAA", hora_inicio "HH:MM", hora_fin "HH:MM")."""
         if not organizador:
             raise ValueError("El campo organizador no puede estar vacío")
@@ -40,18 +41,20 @@ class Encuesta:
         self.titulo = titulo.strip()
         self.invitados = self._validar_invitados(organizador, invitados)
         self.opciones = self._validar_opciones(opciones, ahora)
-        self.votos = {} 
+        self.ubicacion = Ubicacion(ubicacion).texto
+        self.votos = {}  # usuario -> set de índices de opciones
         self.estado = ABIERTA
         self.opcion_confirmada = None
-        
+
     @classmethod
-    def desde_datos(cls, organizador, titulo, opciones, invitados, votos, estado):
+    def desde_datos(cls, organizador, titulo, opciones, invitados, votos, estado, ubicacion=""):
         """Reconstruye una encuesta ya guardada (opciones: lista de OpcionEncuesta; votos: {usuario: {índices}})."""
         encuesta = cls.__new__(cls)
         encuesta.organizador, encuesta.titulo = organizador, titulo
         encuesta.invitados, encuesta.opciones = list(invitados), list(opciones)
         encuesta.votos, encuesta.estado = {u: set(i) for u, i in votos.items()}, estado
         encuesta.opcion_confirmada = None
+        encuesta.ubicacion = ubicacion or ""
         return encuesta
 
     @staticmethod

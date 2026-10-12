@@ -13,7 +13,7 @@ def crear(encuesta, ahora):
     with Session() as sesion:
         fila = EncuestaTabla(
             organizador_id=encuesta.organizador, titulo=encuesta.titulo,
-            estado=encuesta.estado, fecha_creacion=ahora,
+            estado=encuesta.estado, fecha_creacion=ahora, ubicacion=encuesta.ubicacion or None,
         )
         sesion.add(fila)
         sesion.flush()
@@ -52,7 +52,7 @@ def _cargar(sesion, encuesta_id):
     dominio = Encuesta.desde_datos(
         fila.organizador_id, fila.titulo,
         [OpcionEncuesta.desde_datos(o.fecha, o.hora_inicio, o.hora_fin) for o in opciones],
-        invitados, votos, fila.estado,
+        invitados, votos, fila.estado, fila.ubicacion,
     )
     return fila, opciones, dominio
 
@@ -85,7 +85,7 @@ def cerrar(encuesta_id, usuario_id, ahora):
         dominio.cerrar(usuario_id)
         fila.estado = dominio.estado
         texto = (f"{nombre_de_usuario(sesion, dominio.organizador)} cerró la encuesta {resaltar(dominio.titulo)} "
-                f"sin elegir fecha: la juntada se cancela")
+                 f"sin elegir fecha: la juntada se cancela")
         notificar(sesion, dominio.invitados, "cancelacion", texto, ahora)
         sesion.commit()
 
@@ -109,12 +109,13 @@ def confirmar(encuesta_id, usuario_id, opcion_id, ahora):
             hora_fin=elegida.hora_fin.strftime("%H:%M"),
             amigos_invitados=dominio.invitados,
             ahora=ahora,
+            ubicacion=dominio.ubicacion,
         )
         juntada_fila = agregar_juntada(sesion, juntada)[0]
         fila.estado = dominio.estado
         fila.juntada_id = juntada_fila.id
         texto = (f"{nombre_de_usuario(sesion, dominio.organizador)} confirmó {resaltar(dominio.titulo)} "
-                f"para el {elegida.fecha:%d/%m} a las {elegida.hora_inicio:%H:%M}")
+                 f"para el {elegida.fecha:%d/%m} a las {elegida.hora_inicio:%H:%M}")
         notificar(sesion, dominio.invitados, "encuesta_confirmada", texto, ahora, juntada_fila)
         sesion.commit()
         return juntada_fila.id
@@ -138,6 +139,7 @@ def obtener_detalle(encuesta_id, usuario_id):
             "titulo": dominio.titulo,
             "estado": dominio.estado,
             "juntada_id": fila.juntada_id,
+            "ubicacion": dominio.ubicacion,
             "organizador_id": dominio.organizador,
             "organizador": nombres.get(dominio.organizador, ""),
             "es_organizador": usuario_id == dominio.organizador,

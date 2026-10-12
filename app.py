@@ -687,7 +687,9 @@ def crear_encuesta():
             request.form.get("titulo",""),
             [(datetime.strptime(fecha,"%Y-%m-%d").strftime("%d/%m/%Y"),inicio,fin) for fecha,inicio,fin in opciones_formulario],
             invitados_ids,
+            ubicacion=request.form.get("ubicacion",""),
         )
+        
     except ValueError as error:
         return formulario_encuesta(amigos,invitados_ids,str(error),opciones_formulario),400
 
@@ -702,6 +704,7 @@ def mostrar_encuesta(encuesta_id,error=None):
         return "No encontramos esa encuesta.",404
     for opcion in encuesta["opciones"]:
         opcion["dia"]=nombre_del_dia(opcion["fecha"])
+        encuesta["mapa"]=Ubicacion(encuesta["ubicacion"]).enlaceMapa()
         juntada=obtener_por_id(encuesta["juntada_id"]) if encuesta["juntada_id"] else None
     return render_template("encuesta.html",encuesta=encuesta,juntada=juntada,error=error)
 

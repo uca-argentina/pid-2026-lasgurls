@@ -165,3 +165,16 @@ def test_encuesta_cerrada_no_admite_votos_ni_confirmacion():
         e.confirmar(1, 0)
     with pytest.raises(ValueError, match="cerrada"):
         e.cerrar(1)
+        
+def test_la_encuesta_guarda_el_lugar():
+    e = Encuesta(1, "Cena", OPCIONES, [2], ahora=AHORA, ubicacion="  UCA  ")
+    assert e.ubicacion == "UCA"
+
+
+def test_el_lugar_es_opcional():
+    assert crear().ubicacion == ""
+
+
+def test_lugar_demasiado_largo_falla():
+    with pytest.raises(ValueError, match="120"):
+        Encuesta(1, "Cena", OPCIONES, [2], ahora=AHORA, ubicacion="x" * 121)

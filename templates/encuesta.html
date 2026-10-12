@@ -19,6 +19,12 @@
     {% else %}<span style="color: #a4473b; font-weight: 600;">Cancelada</span>{% endif %}
   </p>
 
+  {% if encuesta.ubicacion %}
+  <p class="fila-detalle">
+    Lugar: {{ encuesta.ubicacion }}{% if encuesta.mapa %} · <a href="{{ encuesta.mapa }}" target="_blank" rel="noopener">Ver en el mapa</a>{% endif %}
+  </p>
+  {% endif %}
+
 {% if error %}
 <p class="mensaje-error">{{ error }}</p>
 {% endif %}
