@@ -8,6 +8,7 @@
     <h2>Mi calendario</h2>
     <nav class="nav-principal">
       <a href="{{ url_for('mostrar_nueva_agenda', fecha=fecha_seleccionada.isoformat()) }}" data-con-fecha class="boton-nav">Nuevo evento</a>
+      <a href="{{ url_for('mostrar_nueva_encuesta') }}" class="boton-nav">Nueva encuesta</a>
       <a href="{{ url_for('mostrar_nueva_juntada', fecha=fecha_seleccionada.isoformat()) }}" data-con-fecha class="boton-principal">Nueva juntada</a>
     </nav>
   </div>
