@@ -74,7 +74,29 @@
       <a href="{{ url_for('mostrar_calendario') }}" class="inicio-ver-mas">Ver calendario →</a>
     </section>
   </div>
-
+  <section class="inicio-tarjeta">
+    <h2 class="inicio-titulo">Encuestas</h2>
+    {% if encuestas %}
+    <ul class="inicio-proximas">
+      {% for encuesta in encuestas %}
+      <li>
+        <a class="inicio-proxima" href="{{ url_for('mostrar_encuesta', encuesta_id=encuesta.id) }}">
+          <span class="inicio-proxima-info">
+            <span class="inicio-proxima-titulo">{{ encuesta.titulo }}</span>
+            <span class="inicio-proxima-detalle">{{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }} · {{ "Abierta" if encuesta.estado == "abierta" else "Cerrada" }}</span>
+          </span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="inicio-vacio"><span>Todavía no tenés encuestas. <a href="{{ url_for('mostrar_nueva_encuesta') }}">Armá una</a>.</span></div>
+    {% endif %}
+  </section>
+  
+  
+  
+  </section>
   <section class="inicio-tarjeta">
     <div class="inicio-titulo-con-detalle">
       <h2 class="inicio-titulo">Tu semana</h2>

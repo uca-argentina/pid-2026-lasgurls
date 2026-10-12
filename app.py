@@ -426,6 +426,7 @@ def mostrar_inicio():
         proximas=proximas_juntadas(eventos,ahora),
         semana=mi_semana(lunes,eventos,ahora),
         titulo_semana=titulo_semana(lunes),
+        encuestas=encuesta_acciones.obtener_de_usuario(session["usuarioID"]),
     )
 
 @app.route("/calendario",methods=["GET"])
@@ -690,8 +691,28 @@ def crear_encuesta():
     except ValueError as error:
         return formulario_encuesta(amigos,invitados_ids,str(error),opciones_formulario),400
 
-    encuesta_acciones.crear(encuesta,datetime.now())
-    return redirect(url_for("mostrar_inicio"))
+    encuesta_id=encuesta_acciones.crear(encuesta,datetime.now())
+    return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
+
+@app.route("/encuesta/<int:encuesta_id>",methods=["GET"])
+@login_requerido
+def mostrar_encuesta(encuesta_id,error=None):
+    encuesta=encuesta_acciones.obtener_detalle(encuesta_id,session["usuarioID"])
+    if encuesta is None:
+        return "No encontramos esa encuesta.",404
+    for opcion in encuesta["opciones"]:
+        opcion["dia"]=nombre_del_dia(opcion["fecha"])
+    return render_template("encuesta.html",encuesta=encuesta,error=error)
+
+@app.route("/encuesta/<int:encuesta_id>/votar",methods=["POST"])
+@login_requerido
+def votar_encuesta(encuesta_id):
+    try:
+        opciones_ids=[int(id) for id in request.form.getlist("opciones")]
+        encuesta_acciones.votar(encuesta_id,session["usuarioID"],opciones_ids)
+    except ValueError as error:
+        return mostrar_encuesta(encuesta_id,str(error)),400
+    return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
 
 @app.route("/juntada/<int:juntada_id>/responder",methods=["POST"])
 @login_requerido

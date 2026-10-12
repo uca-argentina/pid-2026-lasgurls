@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block titulo %}{{ encuesta.titulo }}{% endblock %}
+
+{% block contenido %}
+{% set abierta = encuesta.estado == "abierta" %}
+<div class="tarjeta-formulario tarjeta-ancha">
+<div class="encabezado-tarjeta">
+    <h2>{{ encuesta.titulo }}</h2>
+    <div class="encabezado-acciones">
+    <a href="{{ url_for('mostrar_inicio') }}" class="boton-texto">Volver</a>
+    </div>
+</div>
+
+  <p class="fila-detalle">
+    Encuesta hecha por {{ "vos" if encuesta.es_organizador else encuesta.organizador }} · {{ "Abierta" if abierta else "Cerrada" }}
+  </p>
+
+{% if error %}
+<p class="mensaje-error">{{ error }}</p>
+{% endif %}
+
+{% macro detalle_de_opcion(o) %}
+    <span class="fila-info">
+    <span class="fila-nombre">{{ o.dia }}</span>
+    <span class="fila-detalle">{{ texto_horario(o.fecha, o.hora_inicio, o.hora_fin) }}</span>
+    {% if o.votantes %}
+    <span class="fila-detalle">{{ o.votantes|join(", ") }}</span>
+    {% endif %}
+    </span>
+{% endmacro %}
+
+  {% macro conteo(o) %}
+    <span class="fila-detalle" style="white-space: nowrap;">
+      {% if o.ganadora %}<strong>Más votada · </strong>{% endif %}{{ o.votos }} voto{{ "" if o.votos == 1 else "s" }}
+    </span>
+  {% endmacro %}
+
+<div class="seccion seccion-formulario">
+    {% if abierta %}
+    <form method="POST" action="{{ url_for('votar_encuesta', encuesta_id=encuesta.id) }}">
+    <h3 class="titulo-seccion">¿Cuándo te queda bien? Podés marcar varias</h3>
+    <ul class="lista" data-requiere-uno="Elegí al menos una opción.">
+        {% for o in encuesta.opciones %}
+        <li class="fila">
+        <label class="fila-seleccionable">
+            <input type="checkbox" name="opciones" value="{{ o.id }}"{% if o.marcada %} checked{% endif %}>
+            {{ detalle_de_opcion(o) }}
+        </label>
+        {{ conteo(o) }}
+        </li>
+        {% endfor %}
+    </ul>
+    <button type="submit" class="boton-enviar">Guardar mi voto</button>
+    </form>
+    {% else %}
+    <h3 class="titulo-seccion">Resultados</h3>
+    <ul class="lista">
+    {% for o in encuesta.opciones %}
+    <li class="fila">
+        {{ detalle_de_opcion(o) }}
+        {{ conteo(o) }}
+    </li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+
+{% set faltan = encuesta.participantes|rejectattr("voto")|map(attribute="nombre")|list %}
+{% if abierta and faltan %}
+<p class="campo-ayuda">Todavía no votaron: {{ faltan|join(", ") }}.</p>
+{% endif %}
+</div>
+{% endblock %}
