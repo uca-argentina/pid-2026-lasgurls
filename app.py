@@ -702,7 +702,8 @@ def mostrar_encuesta(encuesta_id,error=None):
         return "No encontramos esa encuesta.",404
     for opcion in encuesta["opciones"]:
         opcion["dia"]=nombre_del_dia(opcion["fecha"])
-    return render_template("encuesta.html",encuesta=encuesta,error=error)
+        juntada=obtener_por_id(encuesta["juntada_id"]) if encuesta["juntada_id"] else None
+    return render_template("encuesta.html",encuesta=encuesta,juntada=juntada,error=error)
 
 @app.route("/encuesta/<int:encuesta_id>/votar",methods=["POST"])
 @login_requerido
@@ -710,6 +711,24 @@ def votar_encuesta(encuesta_id):
     try:
         opciones_ids=[int(id) for id in request.form.getlist("opciones")]
         encuesta_acciones.votar(encuesta_id,session["usuarioID"],opciones_ids)
+    except ValueError as error:
+        return mostrar_encuesta(encuesta_id,str(error)),400
+    return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
+
+@app.route("/encuesta/<int:encuesta_id>/cerrar",methods=["POST"])
+@login_requerido
+def cerrar_encuesta(encuesta_id):
+    try:
+        encuesta_acciones.cerrar(encuesta_id,session["usuarioID"])
+    except ValueError as error:
+        return mostrar_encuesta(encuesta_id,str(error)),400
+    return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
+
+@app.route("/encuesta/<int:encuesta_id>/confirmar",methods=["POST"])
+@login_requerido
+def confirmar_encuesta(encuesta_id):
+    try:
+        encuesta_acciones.confirmar(encuesta_id,session["usuarioID"],request.form.get("opcion",type=int),datetime.now())
     except ValueError as error:
         return mostrar_encuesta(encuesta_id,str(error)),400
     return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))

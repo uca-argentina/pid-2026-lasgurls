@@ -25,7 +25,7 @@
     <span class="fila-nombre">{{ o.dia }}</span>
     <span class="fila-detalle">{{ texto_horario(o.fecha, o.hora_inicio, o.hora_fin) }}</span>
     {% if o.votantes %}
-    <span class="fila-detalle">{{ o.votantes|join(", ") }}</span>
+    <span class="fila-detalle">Votaron: {{ o.votantes|join(", ") }}</span>
     {% endif %}
     </span>
 {% endmacro %}
@@ -66,9 +66,54 @@
     {% endif %}
 </div>
 
-{% set faltan = encuesta.participantes|rejectattr("voto")|map(attribute="nombre")|list %}
-{% if abierta and faltan %}
-<p class="campo-ayuda">Todavía no votaron: {{ faltan|join(", ") }}.</p>
-{% endif %}
+  {% set faltan = encuesta.participantes|rejectattr("voto")|map(attribute="nombre")|list %}
+  {% if abierta and faltan %}
+  <p class="campo-ayuda">Todavía no votaron: {{ faltan|join(", ") }}.</p>
+  {% endif %}
+
+  {% if abierta and encuesta.es_organizador %}
+  {% set ganadoras = encuesta.opciones|selectattr("ganadora")|list %}
+<div class="seccion seccion-formulario" style="margin-top: 32px;">
+    <h3 class="titulo-seccion">Cerrar la encuesta</h3>
+    {% if ganadoras %}
+    <form method="POST" action="{{ url_for('confirmar_encuesta', encuesta_id=encuesta.id) }}">
+      <p class="campo-ayuda" style="margin-bottom: 14px;">
+        {% if ganadoras|length > 1 %} Hay empate entre las más votadas. Elegí cuál confirmar.{% else %}Esta es la opción más votada.{% endif %}
+        Al confirmar, se crea la juntada y se invita a todos los que participan de la encuesta.
+      </p>
+      <ul class="lista">
+        {% for o in ganadoras %}
+        <li class="fila">
+          <label class="fila-seleccionable">
+                        <input type="radio" name="opcion" value="{{ o.id }}"{% if loop.first %} checked{% endif %} style="accent-color: var(--color-salvia);">
+            {{ detalle_de_opcion(o) }}
+          </label>
+        </li>
+        {% endfor %}
+      </ul>
+      <button type="submit" class="boton-enviar">Confirmar y crear la juntada</button>
+    </form>
+    {% else %}
+    <p class="campo-ayuda">Todavía nadie votó, así que no hay una opción para confirmar.</p>
+    {% endif %}
+        <form method="POST" action="{{ url_for('cerrar_encuesta', encuesta_id=encuesta.id) }}" style="margin-top: 20px;">
+              <p class="campo-ayuda" style="margin-bottom: 12px;">También podés cerrar la encuesta sin elegir una fecha.</p>
+      <button type="submit" class="boton-neutro">Cerrar sin confirmar</button>
+    </form>
+  </div>
+  {% endif %}
+
+  {% if not abierta %}
+  <p class="campo-ayuda">
+    {% if juntada %}
+    Se confirmó la juntada para el {{ juntada.fecha.strftime("%d/%m/%Y") }}.
+    <a href="{{ url_for('mostrar_calendario', fecha=juntada.fecha.isoformat(), juntada=juntada.id) }}">Verla en el calendario</a>
+    {% elif encuesta.juntada_id %}
+    Se confirmó una fecha, pero esa juntada ya no existe.
+    {% else %}
+    La encuesta se cerró sin confirmar una fecha.
+    {% endif %}
+  </p>
+  {% endif %}
 </div>
 {% endblock %}
