@@ -18,6 +18,13 @@ class OpcionEncuesta:
         ValidadorDetipoEvento().validar_que_no_empiece_en_el_pasado(
             self.fecha, self.hora_inicio, ahora or datetime.now(), "Una opción de la encuesta")
 
+    @classmethod
+    def desde_datos(cls, fecha, hora_inicio, hora_fin):
+        """Reconstruye una opción ya guardada (fecha y horas ya parseadas), sin validar."""
+        opcion = cls.__new__(cls)
+        opcion.fecha, opcion.hora_inicio, opcion.hora_fin = fecha, hora_inicio, hora_fin
+        return opcion
+    
     def clave(self):
         return (self.fecha, self.hora_inicio, self.hora_fin)
 
@@ -36,6 +43,16 @@ class Encuesta:
         self.votos = {} 
         self.estado = ABIERTA
         self.opcion_confirmada = None
+        
+    @classmethod
+    def desde_datos(cls, organizador, titulo, opciones, invitados, votos, estado):
+        """Reconstruye una encuesta ya guardada (opciones: lista de OpcionEncuesta; votos: {usuario: {índices}})."""
+        encuesta = cls.__new__(cls)
+        encuesta.organizador, encuesta.titulo = organizador, titulo
+        encuesta.invitados, encuesta.opciones = list(invitados), list(opciones)
+        encuesta.votos, encuesta.estado = {u: set(i) for u, i in votos.items()}, estado
+        encuesta.opcion_confirmada = None
+        return encuesta
 
     @staticmethod
     def _validar_invitados(organizador, invitados):

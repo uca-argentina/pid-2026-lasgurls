@@ -12,39 +12,42 @@ from dominio.juntada.recurrencia import texto_de_repeticion
 RESPUESTAS = {"Si": ("confirmacion", "confirmó"), "No": ("rechazo", "no va a"), "Tal vez": ("tal_vez", "dijo tal vez a")}
 
 
-def guardar(juntada):
+def agregar_juntada(sesion, juntada):
+    """Agrega a la sesión las filas de la juntada (una por fecha) y sus invitaciones"""
     repeticion = juntada.recurrencia.frecuencia if juntada.recurrencia else None
+    filas = []
+    for fecha in juntada.fechas:
+        juntada_tabla = JuntadaTabla(
+            organizador_id=juntada.organizador,
+            titulo=juntada.titulo_juntada,
+            fecha=fecha,
+            hora_inicio=juntada.hora_inicio,
+            hora_fin=juntada.hora_fin,
+            categoria_id=juntada.categoria_id,
+            visibilidad=juntada.visibilidad,
+            repeticion=repeticion,
+            ubicacion=juntada.ubicacion or None,
+        )
+        sesion.add(juntada_tabla)
+        filas.append(juntada_tabla)
+    sesion.flush()
+
+    for juntada_tabla in filas:
+        if repeticion:
+            juntada_tabla.serie_id = filas[0].id
+        for usuario_id in juntada.amigos_invitados:
+            sesion.add(JuntadaInvitadosTabla(
+                juntada_id=juntada_tabla.id,
+                usuario_id=usuario_id,
+                estado="Pendiente",
+            ))
+    return filas
+
+
+def guardar(juntada):
     with Session() as sesion:
-        filas = []
-        for fecha in juntada.fechas:
-            juntada_tabla = JuntadaTabla(
-                organizador_id=juntada.organizador,
-                titulo=juntada.titulo_juntada,
-                fecha=fecha,
-                hora_inicio=juntada.hora_inicio,
-                hora_fin=juntada.hora_fin,
-                categoria_id=juntada.categoria_id,
-                visibilidad=juntada.visibilidad,
-                repeticion=repeticion,
-                ubicacion=juntada.ubicacion or None,
-            )
-            sesion.add(juntada_tabla)
-            filas.append(juntada_tabla)
-        sesion.flush()
-
-        for juntada_tabla in filas:
-            if repeticion:
-                juntada_tabla.serie_id = filas[0].id
-            for usuario_id in juntada.amigos_invitados:
-                invitado = JuntadaInvitadosTabla(
-                    juntada_id=juntada_tabla.id,
-                    usuario_id=usuario_id,
-                    estado="Pendiente",
-                )
-                sesion.add(invitado)
-
+        filas = agregar_juntada(sesion, juntada)
         sesion.commit()
-
         return filas[0].id
 
 def obtener_por_id(juntada_id):
