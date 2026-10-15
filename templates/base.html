@@ -25,6 +25,15 @@
   {% block contenido %}{% endblock %}
 </main>
 
+{% with mensajes = get_flashed_messages() %}
+{% if mensajes %}
+<div class="toast" role="status" data-toast>
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+  <span>{% for mensaje in mensajes %}{{ mensaje }}{% if not loop.last %} {% endif %}{% endfor %}</span>
+</div>
+{% endif %}
+{% endwith %}
+
 <script src="{{ url_for('static', filename='validacion.js') }}" defer></script>
 <script src="{{ url_for('static', filename='comun.js') }}" defer></script>
 {% block scripts %}{% endblock %}

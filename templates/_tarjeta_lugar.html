@@ -1,0 +1,12 @@
+<div class="lugar">
+  <div class="lugar-encabezado">
+    <span class="lugar-icono">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    </span>
+    <span class="lugar-textos">
+      <strong class="lugar-nombre">{{ lugar.texto }}</strong>
+      <a class="lugar-abrir" href="{{ lugar.mapa }}" target="_blank" rel="noopener">Abrir en Google Maps</a>
+    </span>
+  </div>
+  <iframe class="lugar-mapa" src="{{ lugar.embebido }}" title="Mapa de {{ lugar.texto }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+</div>

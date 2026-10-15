@@ -389,6 +389,9 @@ body {
 .aviso-tal_vez { --color-aviso: #b8901f; }
 .aviso-comentario { --color-aviso: #6f86a8; }
 .aviso-reprogramacion { --color-aviso: #b8901f; }
+.aviso-encuesta,
+.aviso-voto { --color-aviso: #6f86a8; }
+.aviso-encuesta_confirmada { --color-aviso: var(--color-salvia-oscuro); }
 .aviso-rechazo,
 .aviso-baja,
 .aviso-cancelacion,
@@ -814,16 +817,6 @@ strong.grilla-linea {
   margin-bottom: 6px;
   color: var(--color-texto);
   font-weight: 500;
-}
-
-.dialogo .detalle-lugar {
-  margin-bottom: 6px;
-  color: var(--color-texto);
-  overflow-wrap: anywhere;
-}
-
-.detalle-lugar a {
-  color: var(--color-salvia-oscuro);
 }
 
 .dialogo-cerrar {
@@ -2567,5 +2560,424 @@ strong.grilla-linea {
   .inicio-titulo {
     margin-left: 16px;
     margin-right: 16px;
+  }
+}
+
+.lugar {
+  margin: 14px 0 18px;
+  border: 1px solid var(--color-borde);
+  background: #fbfaf7;
+  overflow: hidden;
+}
+
+.lugar-encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.lugar-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-salvia) 16%, white);
+  color: var(--color-salvia-oscuro);
+}
+
+.lugar-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lugar-nombre {
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.lugar-abrir {
+  align-self: flex-start;
+  color: var(--color-salvia-oscuro);
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.lugar-abrir::after {
+  content: " ↗";
+}
+
+.lugar-abrir:hover {
+  text-decoration: underline;
+}
+
+.lugar-mapa {
+  display: block;
+  width: 100%;
+  height: 170px;
+  border: none;
+  border-top: 1px solid var(--color-borde);
+  background: var(--color-borde);
+}
+
+.etiqueta-opcional {
+  color: var(--color-texto-suave);
+  font-weight: 400;
+}
+
+.campo-con-icono {
+  position: relative;
+}
+
+.campo-con-icono svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  transform: translateY(-50%);
+  color: var(--color-texto-suave);
+  pointer-events: none;
+}
+
+.campo .campo-con-icono input {
+  padding-left: 42px;
+}
+
+.campo-con-icono:focus-within svg {
+  color: var(--color-salvia-oscuro);
+}
+
+.estado-encuesta {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.estado-abierta {
+  background: color-mix(in srgb, #6f86a8 16%, white);
+  color: #4f6582;
+}
+
+.estado-votar {
+  background: color-mix(in srgb, #d1a52a 22%, white);
+  color: #8a6a12;
+}
+
+.estado-confirmada {
+  background: color-mix(in srgb, var(--color-salvia) 20%, white);
+  color: var(--color-salvia-oscuro);
+}
+
+.estado-cancelada {
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+}
+
+.encuesta-subtitulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+}
+
+.campo-ayuda-separada {
+  margin-bottom: 14px;
+}
+
+.encuesta-cerrar-sin-fecha {
+  margin-top: 20px;
+}
+
+.conteo-votos {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+  min-width: 110px;
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+}
+
+.conteo-ganadora {
+  color: var(--color-salvia-oscuro);
+  font-weight: 600;
+}
+
+.conteo-texto {
+  white-space: nowrap;
+}
+
+.conteo-barra {
+  display: block;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-borde);
+  overflow: hidden;
+}
+
+.conteo-barra > span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-salvia);
+}
+
+.encuestas-lista {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.encuesta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 16px;
+  border-top: 1px solid var(--color-borde);
+  transition: background 0.15s ease;
+}
+
+.encuesta-item:hover {
+  background: #fbfaf7;
+}
+
+.encuesta-item-cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  padding: 14px 8px 14px 24px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.encuesta-item-arriba {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.encuesta-item-titulo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.encuesta-item-detalle {
+  color: var(--color-texto-suave);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.encuesta-item-progreso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-texto-suave);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.encuesta-item-progreso .conteo-barra {
+  max-width: 180px;
+}
+
+.encuesta-item-resultado {
+  font-size: 0.85rem;
+}
+
+.encuesta-item-resultado strong {
+  font-weight: 600;
+}
+
+.encuesta-item-borrar {
+  margin: 0;
+}
+
+.boton-icono-texto {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-tarjeta);
+  color: var(--color-texto-suave);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.boton-icono-texto:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.inicio-ver-mas-arriba {
+  align-self: auto;
+  margin: 0 0 12px;
+}
+
+.inicio-proxima-lugar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-texto-suave);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.inicio-proxima-lugar svg {
+  flex-shrink: 0;
+}
+
+@media (max-width: 800px) {
+  .inicio-acciones {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .inicio-acciones a {
+    padding-left: 6px;
+    padding-right: 6px;
+    text-align: center;
+  }
+
+  .encuesta-item-cuerpo {
+    padding-left: 16px;
+  }
+
+  .encuesta-item {
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .fila.fila-seleccionable {
+    flex-wrap: nowrap;
+  }
+
+  .encuesta-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding-right: 0;
+  }
+
+  .encuesta-item-borrar {
+    padding: 0 16px 14px;
+  }
+
+  .fila .conteo-votos {
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .fila .conteo-barra {
+    max-width: 160px;
+  }
+
+  .lugar-mapa {
+    height: 150px;
+  }
+
+  .encabezado-tarjeta {
+    margin-bottom: 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .opcion-encuesta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0 12px;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--color-borde);
+  }
+
+  .opcion-encuesta .campo:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .opcion-encuesta [data-quitar] {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+.casilla-confirmar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mini-fantasma {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  z-index: 2;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  background: var(--color-texto);
+  color: #ffffff;
+  font-size: 0.9rem;
+  box-shadow: 0 12px 32px rgba(43, 43, 38, 0.25);
+  transform: translateX(-50%);
+  animation: toast-entrar 0.25s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast svg {
+  flex-shrink: 0;
+  color: #a9c49f;
+}
+
+.toast-saliendo {
+  opacity: 0;
+  transform: translate(-50%, 12px);
+}
+
+@keyframes toast-entrar {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
   }
 }

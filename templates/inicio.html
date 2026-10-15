@@ -3,7 +3,7 @@
 {% block titulo %}Inicio{% endblock %}
 
 {% block contenido %}
-<div class="inicio">
+<div class="inicio" data-en-vivo="inicio">
   <div class="inicio-encabezado">
     <div>
       <h1 class="inicio-saludo">Hola, {{ usuario_actual.nombre.split()[0] }}</h1>
@@ -55,6 +55,12 @@
                 {{ evento.titulo }}
               </span>
               <span class="inicio-proxima-detalle">{{ evento.horario }} · {{ evento.detalle }}</span>
+              {% if evento.lugar %}
+              <span class="inicio-proxima-lugar">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                {{ evento.lugar }}
+              </span>
+              {% endif %}
             </span>
             {% if evento.van %}
             <span class="inicio-avatares" title="{{ evento.van|map(attribute='nombre')|join(', ') }}">
@@ -75,38 +81,72 @@
     </section>
   </div>
   <section class="inicio-tarjeta">
-    <h2 class="inicio-titulo">Encuestas</h2>
+    <div class="inicio-titulo-con-detalle">
+      <h2 class="inicio-titulo">
+        Encuestas
+        {% set por_votar = encuestas|selectattr("situacion", "equalto", "votar")|list %}
+        {% if por_votar %}<span class="inicio-contador">{{ por_votar|length }}</span>{% endif %}
+      </h2>
+      <a href="{{ url_for('mostrar_nueva_encuesta') }}" class="inicio-ver-mas inicio-ver-mas-arriba">Nueva encuesta</a>
+    </div>
     {% if encuestas %}
-    <ul class="inicio-proximas">
+    <ul class="encuestas-lista">
       {% for encuesta in encuestas %}
-      <li>
-        <a class="inicio-proxima" href="{{ url_for('mostrar_encuesta', encuesta_id=encuesta.id) }}">
-          <span class="inicio-proxima-info">
-            <span class="inicio-proxima-titulo">{{ encuesta.titulo }}</span>
-                        <span class="inicio-proxima-detalle">{{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }} ·
-              {% if encuesta.estado == "abierta" %}Abierta
-              {% elif encuesta.juntada_id %}<span style="color: var(--color-salvia); font-weight: 600;">Fecha confirmada</span>
-              {% else %}<span style="color: #a4473b; font-weight: 600;">Cancelada</span>{% endif %}
-            </span>
+      <li class="encuesta-item">
+        <a class="encuesta-item-cuerpo" href="{{ url_for('mostrar_encuesta', encuesta_id=encuesta.id) }}">
+          <span class="encuesta-item-arriba">
+            <strong class="encuesta-item-titulo">{{ encuesta.titulo }}</strong>
+            {% if encuesta.situacion == "votar" %}<span class="estado-encuesta estado-votar">Te falta votar</span>
+            {% elif encuesta.situacion == "abierta" %}<span class="estado-encuesta estado-abierta">Votación abierta</span>
+            {% elif encuesta.situacion == "confirmada" %}<span class="estado-encuesta estado-confirmada">Confirmada</span>
+            {% else %}<span class="estado-encuesta estado-cancelada">Cancelada</span>{% endif %}
           </span>
+          <span class="encuesta-item-detalle">
+            {{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }}
+            · {{ encuesta.cantidad_opciones }} opciones
+            {% if encuesta.ubicacion %}· {{ encuesta.ubicacion }}{% endif %}
+          </span>
+
+          {% if encuesta.situacion in ("votar", "abierta") %}
+          <span class="encuesta-item-progreso">
+            <span class="conteo-barra"><span style="width: {{ encuesta.progreso }}%"></span></span>
+            <span>Votaron {{ encuesta.votaron }} de {{ encuesta.participantes }}</span>
+          </span>
+          <span class="encuesta-item-resultado">
+            {% if not encuesta.opciones_lideres %}Todavía nadie votó
+            {% elif encuesta.opciones_lideres|length == 1 %}Va ganando <strong>{{ encuesta.opciones_lideres[0] }}</strong>
+            {% else %}Empate entre <strong>{{ encuesta.opciones_lideres|join("</strong> y <strong>"|safe) }}</strong>{% endif %}
+          </span>
+          {% elif encuesta.situacion == "confirmada" %}
+          <span class="encuesta-item-resultado">Se juntan el <strong>{{ encuesta.cuando_se_juntan }}</strong></span>
+          {% elif encuesta.juntada_id %}
+          <span class="encuesta-item-resultado">Se eligió una fecha, pero la juntada se canceló después</span>
+          {% else %}
+          <span class="encuesta-item-resultado">Se cerró sin elegir una fecha</span>
+          {% endif %}
         </a>
+        {% if encuesta.situacion in ("confirmada", "cancelada") %}
+        <form method="POST" action="{{ url_for('borrar_encuesta_del_inicio', encuesta_id=encuesta.id) }}" class="encuesta-item-borrar">
+          <button type="submit" class="boton-icono-texto" aria-label="Borrar «{{ encuesta.titulo }}» de mi inicio" title="Borrar de mi inicio">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Borrar</span>
+          </button>
+        </form>
+        {% endif %}
       </li>
       {% endfor %}
     </ul>
     {% else %}
-    <div class="inicio-vacio"><span>Todavía no tenés encuestas. <a href="{{ url_for('mostrar_nueva_encuesta') }}">Armá una</a>.</span></div>
+    <div class="inicio-vacio"><span>Todavía no tenés encuestas. <a href="{{ url_for('mostrar_nueva_encuesta') }}">Armá una</a> para elegir entre todos cuándo juntarse.</span></div>
     {% endif %}
   </section>
-  
-  
-  
-  </section>
+
   <section class="inicio-tarjeta">
     <div class="inicio-titulo-con-detalle">
       <h2 class="inicio-titulo">Tu semana</h2>
       <span class="inicio-fecha">{{ titulo_semana }}</span>
     </div>
-    <div class="mini-semana">
+    <div class="mini-semana" data-nuevo-evento="{{ url_for('mostrar_nueva_agenda') }}" data-nueva-juntada="{{ url_for('mostrar_nueva_juntada') }}">
       <div class="mini-semana-encabezado">
         <span></span>
         {% for dia in semana.dias %}
@@ -116,14 +156,14 @@
         </a>
         {% endfor %}
       </div>
-      <div class="mini-semana-cuerpo">
+      <div class="mini-semana-cuerpo" data-primera-hora="{{ semana.primera_hora }}">
         <div class="mini-semana-horas" aria-hidden="true">
           {% for hora in semana.horas %}
           <span style="top: {{ hora.arriba }}%">{{ hora.texto }}</span>
           {% endfor %}
         </div>
         {% for dia in semana.dias %}
-        <div class="mini-semana-columna{% if dia.es_hoy %} mini-semana-columna-hoy{% endif %}">
+        <div class="mini-semana-columna{% if dia.es_hoy %} mini-semana-columna-hoy{% endif %}" data-fecha="{{ dia.fecha.isoformat() }}" data-nombre="{{ dia.nombre }}">
           {% for hora in semana.horas %}
           <span class="mini-semana-linea" style="top: {{ hora.arriba }}%"></span>
           {% endfor %}
@@ -147,4 +187,10 @@
     </div>
   </section>
 </div>
+
+<dialog class="dialogo" data-crear-en-horario></dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='inicio.js') }}" defer></script>
 {% endblock %}

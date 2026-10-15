@@ -1,10 +1,11 @@
 from sqlalchemy import select, delete, or_
 from base_datos.configuracion import Session
-from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla
+from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla, EncuestaOcultaTabla
+from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_acciones import agregar_juntada
 from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resaltar
 from base_datos.usuario_tabla import UsuarioTabla
-from dominio.encuesta import Encuesta, OpcionEncuesta
+from dominio.encuesta import Encuesta, OpcionEncuesta, ABIERTA
 from dominio.juntada.juntada import Juntada
 
 
@@ -57,7 +58,7 @@ def _cargar(sesion, encuesta_id):
     return fila, opciones, dominio
 
 
-def votar(encuesta_id, usuario_id, opciones_ids):
+def votar(encuesta_id, usuario_id, opciones_ids, ahora):
     """Reemplaza el voto del usuario. Lanza ValueError si no corresponde."""
     with Session() as sesion:
         cargada = _cargar(sesion, encuesta_id)
@@ -72,6 +73,9 @@ def votar(encuesta_id, usuario_id, opciones_ids):
             EncuestaVotoTabla.usuario_id == usuario_id, EncuestaVotoTabla.opcion_id.in_(ids)))
         for id in set(opciones_ids):
             sesion.add(EncuestaVotoTabla(opcion_id=id, usuario_id=usuario_id))
+        if usuario_id != dominio.organizador:
+            texto = f"{nombre_de_usuario(sesion, usuario_id)} votó en la encuesta {resaltar(dominio.titulo)}"
+            notificar(sesion, [dominio.organizador], "voto", texto, ahora, encuesta_id=encuesta_id)
         sesion.commit()
 
 
@@ -158,17 +162,66 @@ def obtener_detalle(encuesta_id, usuario_id):
 
 
 def obtener_de_usuario(usuario_id):
-    """Encuestas donde el usuario organiza o es invitado: abiertas primero, más nuevas primero."""
     with Session() as sesion:
+        ocultas = select(EncuestaOcultaTabla.encuesta_id).where(EncuestaOcultaTabla.usuario_id == usuario_id)
         consulta = (
-            select(EncuestaTabla, UsuarioTabla.nombre)
-            .join(UsuarioTabla, UsuarioTabla.id == EncuestaTabla.organizador_id)
-            .where(or_(
-                EncuestaTabla.organizador_id == usuario_id,
-                EncuestaTabla.id.in_(select(EncuestaInvitadoTabla.encuesta_id).where(EncuestaInvitadoTabla.usuario_id == usuario_id)),
-            ))
-            .order_by(EncuestaTabla.estado, EncuestaTabla.fecha_creacion.desc(), EncuestaTabla.id.desc())
+            select(EncuestaTabla.id)
+            .where(
+                or_(
+                    EncuestaTabla.organizador_id == usuario_id,
+                    EncuestaTabla.id.in_(select(EncuestaInvitadoTabla.encuesta_id).where(EncuestaInvitadoTabla.usuario_id == usuario_id)),
+                ),
+                EncuestaTabla.id.not_in(ocultas),
+            )
+            .order_by(EncuestaTabla.fecha_creacion.desc(), EncuestaTabla.id.desc())
         )
-        return [{"id": e.id, "titulo": e.titulo, "estado": e.estado, "organizador": nombre,
-                "es_organizador": e.organizador_id == usuario_id, "juntada_id": e.juntada_id}
-                for e, nombre in sesion.execute(consulta).all()]
+        resumenes = [_resumen(sesion, encuesta_id, usuario_id) for encuesta_id in sesion.scalars(consulta).all()]
+    orden = {"votar": 0, "abierta": 1, "confirmada": 2, "cancelada": 3}
+    resumenes.sort(key=lambda resumen: orden[resumen["situacion"]])
+    return resumenes
+
+
+def _resumen(sesion, encuesta_id, usuario_id):
+    fila, opciones, dominio = _cargar(sesion, encuesta_id)
+    participantes = [dominio.organizador] + dominio.invitados
+    nombre_organizador = sesion.get(UsuarioTabla, dominio.organizador)
+    juntada = sesion.get(JuntadaTabla, fila.juntada_id) if fila.juntada_id else None
+    if dominio.estado == ABIERTA:
+        situacion = "abierta" if usuario_id in dominio.votos else "votar"
+    else:
+        situacion = "confirmada" if juntada is not None else "cancelada"
+    return {
+        "id": fila.id,
+        "titulo": dominio.titulo,
+        "situacion": situacion,
+        "organizador": nombre_organizador.nombre if nombre_organizador else "",
+        "es_organizador": usuario_id == dominio.organizador,
+        "ubicacion": dominio.ubicacion,
+        "participantes": len(participantes),
+        "votaron": sum(1 for usuario in participantes if usuario in dominio.votos),
+        "cantidad_opciones": len(opciones),
+        "ganadoras": [
+            {"fecha": opciones[i].fecha, "hora_inicio": opciones[i].hora_inicio, "hora_fin": opciones[i].hora_fin,
+             "votos": dominio.cantidad_de_votos(i)}
+            for i in dominio.opciones_ganadoras()
+        ],
+        "juntada": juntada,
+        "juntada_id": fila.juntada_id,
+    }
+
+
+def ocultar(encuesta_id, usuario_id):
+    with Session() as sesion:
+        cargada = _cargar(sesion, encuesta_id)
+        if cargada is None:
+            raise ValueError("La encuesta no existe")
+        fila, _, dominio = cargada
+        if usuario_id != dominio.organizador and usuario_id not in dominio.invitados:
+            raise ValueError("No participás de esta encuesta")
+        if dominio.estado == ABIERTA:
+            raise ValueError("No podés borrar una encuesta que todavía está abierta")
+        ya_oculta = sesion.scalars(select(EncuestaOcultaTabla).where(
+            EncuestaOcultaTabla.encuesta_id == encuesta_id, EncuestaOcultaTabla.usuario_id == usuario_id)).first()
+        if ya_oculta is None:
+            sesion.add(EncuestaOcultaTabla(encuesta_id=encuesta_id, usuario_id=usuario_id))
+        sesion.commit()

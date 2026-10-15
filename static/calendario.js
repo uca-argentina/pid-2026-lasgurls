@@ -317,14 +317,35 @@
     return formulario;
   }
 
-  function parrafoDeLugar(evento){
-    var parrafo=crear("p","detalle-lugar",evento.ubicacion+" · ");
-    var enlace=crear("a","","Ver en el mapa");
-    enlace.href=evento.mapa;
+  function iconoDeLugar(){
+    var svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+    svg.setAttribute("viewBox","0 0 24 24");
+    svg.setAttribute("width","18");
+    svg.setAttribute("height","18");
+    svg.setAttribute("aria-hidden","true");
+    svg.innerHTML='<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="10" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/>';
+    var icono=crear("span","lugar-icono");
+    icono.appendChild(svg);
+    return icono;
+  }
+
+  function tarjetaDeLugar(lugar){
+    var tarjeta=crear("div","lugar");
+    var encabezado=crear("div","lugar-encabezado");
+    var textos=crear("span","lugar-textos");
+    var enlace=crear("a","lugar-abrir","Abrir en Google Maps");
+    enlace.href=lugar.mapa;
     enlace.target="_blank";
     enlace.rel="noopener";
-    parrafo.appendChild(enlace);
-    return parrafo;
+    textos.append(crear("strong","lugar-nombre",lugar.texto),enlace);
+    encabezado.append(iconoDeLugar(),textos);
+    var mapa=crear("iframe","lugar-mapa");
+    mapa.src=lugar.embebido;
+    mapa.title="Mapa de "+lugar.texto;
+    mapa.loading="lazy";
+    mapa.referrerPolicy="no-referrer-when-downgrade";
+    tarjeta.append(encabezado,mapa);
+    return tarjeta;
   }
 
   function seccionDeComentarios(evento){
@@ -416,7 +437,7 @@
     arriba.appendChild(cruzCerrar());
 
     var contenido = [arriba, tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
-    if(evento.ubicacion)contenido.splice(4,0,parrafoDeLugar(evento));
+    if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));
     if(acciones.children.length)contenido.push(acciones);

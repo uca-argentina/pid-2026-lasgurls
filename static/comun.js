@@ -49,6 +49,9 @@
     if (!evento.target.closest("[data-recargable]")) document.documentElement.classList.add("navegando");
   });
 
+  var ultimasNotificaciones = null;
+  var contenidoEnVivo = new WeakMap();
+
   function actualizarNotificaciones() {
     var contenedor = document.querySelector("[data-notificaciones]");
     if (!contenedor || document.hidden || contenedor.querySelector(".desplegable[open]")) return;
@@ -57,12 +60,68 @@
         return respuesta.ok && !respuesta.redirected ? respuesta.text() : null;
       })
       .then(function (html) {
-        if (html !== null && !contenedor.querySelector(".desplegable[open]")) contenedor.innerHTML = html;
+        if (html === null || contenedor.querySelector(".desplegable[open]")) return;
+        contenedor.innerHTML = html;
+        if (ultimasNotificaciones !== null && html !== ultimasNotificaciones) actualizarEnVivo();
+        ultimasNotificaciones = html;
       })
       .catch(function () {});
   }
 
-  setInterval(actualizarNotificaciones, 15000);
+  function guardarContenidoEnVivo() {
+    document.querySelectorAll("[data-en-vivo]").forEach(function (zona) {
+      contenidoEnVivo.set(zona, zona.innerHTML);
+      delete zona.dataset.editando;
+    });
+  }
+
+  function estaEditando(zona) {
+    var activo = document.activeElement;
+    return zona.dataset.editando === "si" || (zona.contains(activo) && activo.matches("input, textarea, select"));
+  }
+
+  function actualizarEnVivo() {
+    var zonas = document.querySelectorAll("[data-en-vivo]");
+    if (!zonas.length || document.hidden || document.querySelector("dialog[open]")) return;
+    fetch(window.location.href)
+      .then(function (respuesta) {
+        return respuesta.ok && !respuesta.redirected ? respuesta.text() : null;
+      })
+      .then(function (html) {
+        if (html === null || document.querySelector("dialog[open]")) return;
+        var nuevo = new DOMParser().parseFromString(html, "text/html");
+        var cambio = false;
+        document.querySelectorAll("[data-en-vivo]").forEach(function (zona) {
+          var otra = nuevo.querySelector('[data-en-vivo="' + zona.dataset.enVivo + '"]');
+          if (!otra || estaEditando(zona) || otra.innerHTML === contenidoEnVivo.get(zona)) return;
+          zona.innerHTML = otra.innerHTML;
+          contenidoEnVivo.set(zona, zona.innerHTML);
+          cambio = true;
+        });
+        if (cambio) document.dispatchEvent(new CustomEvent("contenido-actualizado"));
+      })
+      .catch(function () {});
+  }
+
+  document.addEventListener("input", function (evento) {
+    var zona = evento.target.closest("[data-en-vivo]");
+    if (zona) zona.dataset.editando = "si";
+  });
+
+  document.addEventListener("contenido-actualizado", guardarContenidoEnVivo);
+  guardarContenidoEnVivo();
+
+  setInterval(actualizarNotificaciones, 10000);
+  setInterval(actualizarEnVivo, 10000);
+  document.addEventListener("visibilitychange", actualizarEnVivo);
+
+  var toast = document.querySelector("[data-toast]");
+  if (toast) {
+    setTimeout(function () {
+      toast.classList.add("toast-saliendo");
+      setTimeout(function () { toast.remove(); }, 400);
+    }, 4500);
+  }
 
   function mostrarInsignia(desplegable, cantidad) {
     var insignia = desplegable.querySelector(".insignia");

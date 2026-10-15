@@ -136,7 +136,6 @@ def cancelar_serie(juntada_id, organizador_id, ahora):
 
         consulta = select(JuntadaInvitadosTabla.usuario_id).where(
             JuntadaInvitadosTabla.juntada_id.in_(juntadas_ids),
-            JuntadaInvitadosTabla.estado != "No",
         )
         repeticion = texto_de_repeticion(juntada.repeticion, juntada.fecha) or "la serie"
         texto = f"{nombre_de_usuario(sesion, organizador_id)} canceló todas las fechas de {resaltar(juntada.titulo)} ({repeticion.lower()})"

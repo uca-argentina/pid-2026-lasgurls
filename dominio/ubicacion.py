@@ -16,3 +16,8 @@ class Ubicacion:
         if not self.texto:
             return None
         return "https://www.google.com/maps/search/?api=1&query="+quote_plus(self.texto)
+
+    def enlaceEmbebido(self):
+        if not self.texto:
+            return None
+        return "https://maps.google.com/maps?q="+quote_plus(self.texto)+"&z=15&output=embed"

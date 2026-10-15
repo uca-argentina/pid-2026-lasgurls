@@ -9,7 +9,7 @@ from base_datos.comentario_tabla import ComentarioTabla
 from base_datos.grupo_tabla import GrupoTabla
 from base_datos.grupo_miembros_tabla import GrupoMiembrosTabla
 from base_datos.notificacion_tabla import NotificacionTabla
-from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla
+from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla, EncuestaOcultaTabla
 
 Base.metadata.create_all(engine)
 print("tablas creadas!")

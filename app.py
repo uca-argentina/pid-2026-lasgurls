@@ -1,9 +1,15 @@
 from functools import wraps
+import os
 import secrets
+import time as modulo_tiempo
 import unicodedata
 from datetime import date, datetime, time, timedelta
 import calendar as modulo_calendario
-from flask import Flask, request, render_template, session, redirect, url_for, g
+
+os.environ.setdefault("TZ","America/Argentina/Buenos_Aires")
+modulo_tiempo.tzset()
+
+from flask import Flask, request, render_template, session, redirect, url_for, g, flash
 from dominio.usuario import Usuario
 from dominio.juntada.juntada import Juntada
 from dominio.juntada.reprogramacion import Reprogramacion
@@ -273,6 +279,12 @@ def baja_cuenta():
     session.clear()
     return redirect(url_for("mostrar_login",baja="1"))
 
+def datos_de_lugar(texto):
+    ubicacion=Ubicacion(texto)
+    if not ubicacion.texto:
+        return None
+    return {"texto":ubicacion.texto,"mapa":ubicacion.enlaceMapa(),"embebido":ubicacion.enlaceEmbebido()}
+
 def eventos_del_usuario(usuario_id,desde,hasta):
     eventos=[]
 
@@ -377,6 +389,7 @@ def mi_semana(lunes,eventos,ahora):
         asignar_carriles(bloques)
         semana.append({
             "fecha":dia,"titulo":DIAS_SEMANA[dia.weekday()].capitalize(),"numero":dia.day,"es_hoy":dia==ahora.date(),
+            "nombre":nombre_del_dia(dia),
             "bloques":[{
                 "arriba":round((bloque["inicio"]-inicio_visible).total_seconds()/60/minutos_visibles*100,2),
                 "alto":round((bloque["fin"]-bloque["inicio"]).total_seconds()/60/minutos_visibles*100,2),
@@ -390,6 +403,7 @@ def mi_semana(lunes,eventos,ahora):
     minutos_ahora=(ahora-datetime.combine(ahora.date(),time(primera_hora))).total_seconds()/60
     return {
         "dias":semana,
+        "primera_hora":primera_hora,
         "horas":[{"texto":f"{hora:02d}","arriba":round((hora-primera_hora)*60/minutos_visibles*100,2)} for hora in range(primera_hora,24,2)],
         "ahora":round(minutos_ahora/minutos_visibles*100,2) if 0<=minutos_ahora<=minutos_visibles else None,
     }
@@ -410,6 +424,7 @@ def proximas_juntadas(eventos,ahora):
         "numero":evento["fecha"].day,
         "horario":texto_horario(evento["fecha"],evento["hora_inicio"],evento["hora_fin"]),
         "van":[persona for persona in evento["personas"] if persona["estado"] in ("organiza","Si")],
+        "lugar":Ubicacion(evento.get("ubicacion")).texto,
     } for _,evento in proximas[:MAXIMO_PROXIMAS]]
 
 @app.route("/",methods=["GET"])
@@ -426,8 +441,21 @@ def mostrar_inicio():
         proximas=proximas_juntadas(eventos,ahora),
         semana=mi_semana(lunes,eventos,ahora),
         titulo_semana=titulo_semana(lunes),
-        encuestas=encuesta_acciones.obtener_de_usuario(session["usuarioID"]),
+        encuestas=[resumen_de_encuesta(encuesta) for encuesta in encuesta_acciones.obtener_de_usuario(session["usuarioID"])],
     )
+
+def fecha_corta(fecha):
+    return f"{DIAS_SEMANA[fecha.weekday()].capitalize()} {fecha.day}/{fecha.month}"
+
+def resumen_de_encuesta(encuesta):
+    encuesta["opciones_lideres"]=[
+        f"{fecha_corta(opcion['fecha'])} · {texto_horario(opcion['fecha'],opcion['hora_inicio'],opcion['hora_fin'])}"
+        for opcion in encuesta["ganadoras"]
+    ]
+    juntada=encuesta["juntada"]
+    encuesta["cuando_se_juntan"]=f"{fecha_corta(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}" if juntada else None
+    encuesta["progreso"]=round(encuesta["votaron"]/encuesta["participantes"]*100) if encuesta["participantes"] else 0
+    return encuesta
 
 @app.route("/calendario",methods=["GET"])
 @login_requerido
@@ -475,8 +503,7 @@ def mostrar_calendario():
                 "cuando":f"{nombre_del_dia(evento['fecha'])} · {texto_horario(evento['fecha'],evento['hora_inicio'],evento['hora_fin'])}",
                 "juntadaID":evento["juntada_id"],
                 "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
-                "ubicacion":evento["ubicacion"],
-                "mapa":Ubicacion(evento["ubicacion"]).enlaceMapa(),
+                "lugar":datos_de_lugar(evento["ubicacion"]),
                 **acciones_del_evento(evento,ahora),
             })
 
@@ -704,8 +731,8 @@ def mostrar_encuesta(encuesta_id,error=None):
         return "No encontramos esa encuesta.",404
     for opcion in encuesta["opciones"]:
         opcion["dia"]=nombre_del_dia(opcion["fecha"])
-        encuesta["mapa"]=Ubicacion(encuesta["ubicacion"]).enlaceMapa()
-        juntada=obtener_por_id(encuesta["juntada_id"]) if encuesta["juntada_id"] else None
+    encuesta["lugar"]=datos_de_lugar(encuesta["ubicacion"])
+    juntada=obtener_por_id(encuesta["juntada_id"]) if encuesta["juntada_id"] else None
     return render_template("encuesta.html",encuesta=encuesta,juntada=juntada,error=error)
 
 @app.route("/encuesta/<int:encuesta_id>/votar",methods=["POST"])
@@ -713,10 +740,11 @@ def mostrar_encuesta(encuesta_id,error=None):
 def votar_encuesta(encuesta_id):
     try:
         opciones_ids=[int(id) for id in request.form.getlist("opciones")]
-        encuesta_acciones.votar(encuesta_id,session["usuarioID"],opciones_ids)
+        encuesta_acciones.votar(encuesta_id,session["usuarioID"],opciones_ids,datetime.now())
     except ValueError as error:
         return mostrar_encuesta(encuesta_id,str(error)),400
-    return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
+    flash("Guardamos tu voto. Te avisamos cuando se confirme la fecha.")
+    return redirect(url_for("mostrar_inicio"))
 
 @app.route("/encuesta/<int:encuesta_id>/cerrar",methods=["POST"])
 @login_requerido
@@ -726,6 +754,15 @@ def cerrar_encuesta(encuesta_id):
     except ValueError as error:
         return mostrar_encuesta(encuesta_id,str(error)),400
     return redirect(url_for("mostrar_encuesta",encuesta_id=encuesta_id))
+
+@app.route("/encuesta/<int:encuesta_id>/borrar",methods=["POST"])
+@login_requerido
+def borrar_encuesta_del_inicio(encuesta_id):
+    try:
+        encuesta_acciones.ocultar(encuesta_id,session["usuarioID"])
+    except ValueError as error:
+        return str(error),400
+    return redirect(url_for("mostrar_inicio"))
 
 @app.route("/encuesta/<int:encuesta_id>/confirmar",methods=["POST"])
 @login_requerido

@@ -1,4 +1,8 @@
 <div class="campo">
-  <label for="ubicacion">Lugar (opcional)</label>
-  <input type="text" id="ubicacion" name="ubicacion" placeholder="Por ejemplo: UCA" value="{{ request.form.get('ubicacion', '') }}" maxlength="120">
+  <label for="ubicacion">Lugar <span class="etiqueta-opcional">(opcional)</span></label>
+  <div class="campo-con-icono">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+    <input type="text" id="ubicacion" name="ubicacion" placeholder="Un bar, una dirección, «Casa de Juan»…" value="{{ request.form.get('ubicacion', '') }}" maxlength="120" autocomplete="off">
+  </div>
+  <p class="campo-ayuda">Los invitados lo van a poder abrir en Google Maps.</p>
 </div>

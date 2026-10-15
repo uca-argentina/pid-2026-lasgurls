@@ -38,3 +38,10 @@ class EncuestaVotoTabla(Base):
     id = Column(Integer, primary_key=True)
     opcion_id = Column(Integer, ForeignKey("encuesta_opciones.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+
+class EncuestaOcultaTabla(Base):
+    __tablename__ = "encuestas_ocultas"
+
+    id = Column(Integer, primary_key=True)
+    encuesta_id = Column(Integer, ForeignKey("encuestas.id"), nullable=False)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)

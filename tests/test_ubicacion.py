@@ -60,3 +60,11 @@ def test_juntadaGuardaLaUbicacion():
     juntada=Juntada(1,"15/09/2026","Asado","20:00","23:00",[2],ahora=AHORA,ubicacion="Casa de Caro")
 
     assert juntada.ubicacion=="Casa de Caro"
+
+
+def test_enlaceEmbebido():
+    assert Ubicacion("Cafe Martinez").enlaceEmbebido()=="https://maps.google.com/maps?q=Cafe+Martinez&z=15&output=embed"
+
+
+def test_ubicacionVaciaNoTieneEnlaceEmbebido():
+    assert Ubicacion("").enlaceEmbebido() is None
