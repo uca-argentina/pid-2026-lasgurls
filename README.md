@@ -2,7 +2,7 @@
 
 Aplicación web para organizar juntadas con amigos: cada persona carga su agenda, ve cuándo están libres sus amigos y coordina encuentros, con invitaciones, encuestas de fecha y notificaciones dentro de la app.
 
-**Demo:** https://pid-2026-lasgurls.onrender.com
+**Demo:** https://juntapp.onrender.com/
 
 Proyecto de la materia PID (UCA, 2026).
 
@@ -28,6 +28,7 @@ Proyecto de la materia PID (UCA, 2026).
 - El organizador propone de 2 a 5 opciones de fecha y horario.
 - Los invitados votan, y se ve en vivo quién votó y qué opción va ganando.
 - Al confirmar la opción ganadora se crea la juntada automáticamente y se cierra la encuesta.
+- La encuesta puede ser semanal: la juntada confirmada se repite ese mismo día y horario durante un año.
 
 **Inicio (dashboard)**
 - Invitaciones pendientes para responder en el momento.

@@ -178,3 +178,24 @@ def test_el_lugar_es_opcional():
 def test_lugar_demasiado_largo_falla():
     with pytest.raises(ValueError, match="120"):
         Encuesta(1, "Cena", OPCIONES, [2], ahora=AHORA, ubicacion="x" * 121)
+
+def test_encuesta_sin_repeticion_no_genera_recurrencia():
+    e = crear()
+    assert e.repeticion is None
+    assert e.recurrencia_de(e.opciones[0]) is None
+
+
+def test_encuesta_semanal_repite_la_opcion_confirmada_durante_un_anio():
+    e = Encuesta(1, "Fútbol", OPCIONES, [2, 3], ahora=AHORA, repeticion="semanal")
+    e.votar(2, [2])
+    elegida = e.confirmar(1, 2)
+    fechas = e.recurrencia_de(elegida).fechas_desde(elegida.fecha)
+    assert fechas[0] == elegida.fecha
+    assert fechas[1].isoformat() == "2026-10-29"
+    assert all(fecha.weekday() == elegida.fecha.weekday() for fecha in fechas)
+    assert fechas[-1].isoformat() <= "2027-10-22"
+
+
+def test_encuesta_con_otra_repeticion_falla():
+    with pytest.raises(ValueError, match="todas las semanas"):
+        Encuesta(1, "Cena", OPCIONES, [2], ahora=AHORA, repeticion="diaria")

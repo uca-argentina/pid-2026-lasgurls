@@ -2,6 +2,7 @@ from datetime import datetime
 from dominio.modulo_utilidades.parseo_hora_fecha import parsear_fecha, parsear_hora
 from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEvento
 from dominio.ubicacion import Ubicacion
+from dominio.juntada.recurrencia import Recurrencia, un_anio_despues
 
 MINIMO_OPCIONES = 2
 MAXIMO_OPCIONES = 5
@@ -31,7 +32,7 @@ class OpcionEncuesta:
 
 
 class Encuesta:
-    def __init__(self, organizador, titulo, opciones, invitados, ahora=None, ubicacion=""):
+    def __init__(self, organizador, titulo, opciones, invitados, ahora=None, ubicacion="", repeticion=None):
         """opciones: lista de tuplas (fecha "DD/MM/AAAA", hora_inicio "HH:MM", hora_fin "HH:MM")."""
         if not organizador:
             raise ValueError("El campo organizador no puede estar vacío")
@@ -42,12 +43,15 @@ class Encuesta:
         self.invitados = self._validar_invitados(organizador, invitados)
         self.opciones = self._validar_opciones(opciones, ahora)
         self.ubicacion = Ubicacion(ubicacion).texto
+        if repeticion not in (None, "semanal"):
+            raise ValueError("La encuesta solo se puede repetir todas las semanas")
+        self.repeticion = repeticion
         self.votos = {}  # usuario -> set de índices de opciones
         self.estado = ABIERTA
         self.opcion_confirmada = None
 
     @classmethod
-    def desde_datos(cls, organizador, titulo, opciones, invitados, votos, estado, ubicacion=""):
+    def desde_datos(cls, organizador, titulo, opciones, invitados, votos, estado, ubicacion="", repeticion=None):
         """Reconstruye una encuesta ya guardada (opciones: lista de OpcionEncuesta; votos: {usuario: {índices}})."""
         encuesta = cls.__new__(cls)
         encuesta.organizador, encuesta.titulo = organizador, titulo
@@ -55,6 +59,7 @@ class Encuesta:
         encuesta.votos, encuesta.estado = {u: set(i) for u, i in votos.items()}, estado
         encuesta.opcion_confirmada = None
         encuesta.ubicacion = ubicacion or ""
+        encuesta.repeticion = repeticion
         return encuesta
 
     @staticmethod
@@ -126,6 +131,11 @@ class Encuesta:
         self.estado = CERRADA
         self.opcion_confirmada = self.opciones[indice]
         return self.opcion_confirmada
+
+    def recurrencia_de(self, opcion):
+        if self.repeticion is None:
+            return None
+        return Recurrencia(self.repeticion, un_anio_despues(opcion.fecha).strftime("%d/%m/%Y"))
 
     def _validar_organizador(self, usuario):
         if usuario != self.organizador:

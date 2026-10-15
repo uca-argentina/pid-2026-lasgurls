@@ -12,6 +12,7 @@ class EncuestaTabla(Base):
     juntada_id = Column(Integer, nullable=True)
     fecha_creacion = Column(DateTime, nullable=False)
     ubicacion = Column(String(120), nullable=True)
+    repeticion = Column(String(20), nullable=True)
 
 
 class EncuestaOpcionTabla(Base):

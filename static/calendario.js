@@ -16,6 +16,10 @@
   var MAXIMO_AVATARES = 3;
   var datos = null;
   var filtros = { categoria: {}, tipo: {} };
+  var verTodosLosFiltros = false;
+  try {
+    verTodosLosFiltros = window.localStorage.getItem("verTodosLosFiltros") === "si";
+  } catch (error) {}
 
   var crear = GrillaSemanal.crear;
   var textoHora = GrillaSemanal.textoHora;
@@ -112,6 +116,17 @@
       var valor = GRUPOS[grupo].valor(evento);
       if (valor && !opciones[valor]) opciones[valor] = evento;
     });
+    if (!verTodosLosFiltros) return opciones;
+    if (grupo === "tipo") {
+      Object.keys(ETIQUETAS).forEach(function (tipo) {
+        if (!opciones[tipo]) opciones[tipo] = { tipo: tipo };
+      });
+    } else {
+      (datos.categorias || []).forEach(function (categoria) {
+        if (!opciones[categoria.nombre]) opciones[categoria.nombre] = { tipo: "personal", color: categoria.color };
+      });
+      if (!opciones["Sin categoría"]) opciones["Sin categoría"] = { tipo: "personal" };
+    }
     return opciones;
   }
 
@@ -142,6 +157,15 @@
   }
 
   document.addEventListener("click", function (evento) {
+    if (!evento.target.closest("[data-ver-todos-los-filtros]") || !datos) return;
+    verTodosLosFiltros = !verTodosLosFiltros;
+    try {
+      window.localStorage.setItem("verTodosLosFiltros", verTodosLosFiltros ? "si" : "no");
+    } catch (error) {}
+    dibujar(false);
+  });
+
+  document.addEventListener("click", function (evento) {
     var boton = evento.target.closest("[data-filtro-grupo]");
     if (!boton || !datos) return;
     var elegidos = filtros[boton.dataset.filtroGrupo];
@@ -156,6 +180,8 @@
     if (!contenedor) return;
     dibujarLeyenda("categoria");
     dibujarLeyenda("tipo");
+    var verTodos = document.querySelector("[data-ver-todos-los-filtros]");
+    if (verTodos) verTodos.textContent = verTodosLosFiltros ? "Ver solo los de esta semana" : "Ver todos los filtros";
 
     var eventos = datos.eventos.map(function (evento, indice) {
       return { inicio: new Date(evento.inicio).getTime(), fin: new Date(evento.fin).getTime(), indice: indice };

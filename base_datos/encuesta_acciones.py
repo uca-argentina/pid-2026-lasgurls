@@ -7,6 +7,7 @@ from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resal
 from base_datos.usuario_tabla import UsuarioTabla
 from dominio.encuesta import Encuesta, OpcionEncuesta, ABIERTA
 from dominio.juntada.juntada import Juntada
+from dominio.juntada.recurrencia import texto_de_repeticion
 
 
 def crear(encuesta, ahora):
@@ -15,6 +16,7 @@ def crear(encuesta, ahora):
         fila = EncuestaTabla(
             organizador_id=encuesta.organizador, titulo=encuesta.titulo,
             estado=encuesta.estado, fecha_creacion=ahora, ubicacion=encuesta.ubicacion or None,
+            repeticion=encuesta.repeticion,
         )
         sesion.add(fila)
         sesion.flush()
@@ -53,7 +55,7 @@ def _cargar(sesion, encuesta_id):
     dominio = Encuesta.desde_datos(
         fila.organizador_id, fila.titulo,
         [OpcionEncuesta.desde_datos(o.fecha, o.hora_inicio, o.hora_fin) for o in opciones],
-        invitados, votos, fila.estado, fila.ubicacion,
+        invitados, votos, fila.estado, fila.ubicacion, fila.repeticion,
     )
     return fila, opciones, dominio
 
@@ -114,12 +116,14 @@ def confirmar(encuesta_id, usuario_id, opcion_id, ahora):
             amigos_invitados=dominio.invitados,
             ahora=ahora,
             ubicacion=dominio.ubicacion,
+            recurrencia=dominio.recurrencia_de(elegida),
         )
         juntada_fila = agregar_juntada(sesion, juntada)[0]
         fila.estado = dominio.estado
         fila.juntada_id = juntada_fila.id
+        repite = f" ({texto_de_repeticion(dominio.repeticion, elegida.fecha).lower()})" if dominio.repeticion else ""
         texto = (f"{nombre_de_usuario(sesion, dominio.organizador)} confirmó {resaltar(dominio.titulo)} "
-                 f"para el {elegida.fecha:%d/%m} a las {elegida.hora_inicio:%H:%M}")
+                 f"para el {elegida.fecha:%d/%m} a las {elegida.hora_inicio:%H:%M}{repite}")
         notificar(sesion, dominio.invitados, "encuesta_confirmada", texto, ahora, juntada_fila)
         sesion.commit()
         return juntada_fila.id
@@ -144,6 +148,7 @@ def obtener_detalle(encuesta_id, usuario_id):
             "estado": dominio.estado,
             "juntada_id": fila.juntada_id,
             "ubicacion": dominio.ubicacion,
+            "repeticion": dominio.repeticion,
             "organizador_id": dominio.organizador,
             "organizador": nombres.get(dominio.organizador, ""),
             "es_organizador": usuario_id == dominio.organizador,
@@ -197,6 +202,7 @@ def _resumen(sesion, encuesta_id, usuario_id):
         "organizador": nombre_organizador.nombre if nombre_organizador else "",
         "es_organizador": usuario_id == dominio.organizador,
         "ubicacion": dominio.ubicacion,
+        "repeticion": dominio.repeticion,
         "participantes": len(participantes),
         "votaron": sum(1 for usuario in participantes if usuario in dominio.votos),
         "cantidad_opciones": len(opciones),

@@ -17,6 +17,7 @@
     {% elif juntada %}<span class="estado-encuesta estado-confirmada">Fecha confirmada</span>
     {% else %}<span class="estado-encuesta estado-cancelada">Cancelada</span>{% endif %}
     Encuesta hecha por {{ "vos" if encuesta.es_organizador else encuesta.organizador }}
+    {% if encuesta.repeticion %}<span class="encuesta-repite">· Se repite todas las semanas</span>{% endif %}
   </p>
 
   {% if encuesta.lugar %}
@@ -30,7 +31,7 @@
 {% macro detalle_de_opcion(o) %}
     <span class="fila-info">
     <span class="fila-nombre">{{ o.dia }}</span>
-    <span class="fila-detalle">{{ texto_horario(o.fecha, o.hora_inicio, o.hora_fin) }}</span>
+    <span class="fila-detalle">{{ texto_horario(o.fecha, o.hora_inicio, o.hora_fin) }}{% if o.repite %} · y después {{ o.repite|lower }}{% endif %}</span>
     {% if o.votantes %}
     <span class="fila-detalle">Votaron: {{ o.votantes|join(", ") }}</span>
     {% endif %}

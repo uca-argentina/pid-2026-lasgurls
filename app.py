@@ -454,6 +454,7 @@ def resumen_de_encuesta(encuesta):
     ]
     juntada=encuesta["juntada"]
     encuesta["cuando_se_juntan"]=f"{fecha_corta(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}" if juntada else None
+    encuesta["repite"]=texto_de_repeticion(juntada.repeticion,juntada.fecha) if juntada and juntada.repeticion else None
     encuesta["progreso"]=round(encuesta["votaron"]/encuesta["participantes"]*100) if encuesta["participantes"] else 0
     return encuesta
 
@@ -512,6 +513,7 @@ def mostrar_calendario():
         "dias":[dia_de_la_grilla(dia) for dia in dias_de_la_semana(lunes)],
         "eventos":eventos_de_la_semana,
         "urls":{"nuevo_evento":url_for("mostrar_nueva_agenda"),"nueva_juntada":url_for("mostrar_nueva_juntada")},
+        "categorias":[{"nombre":categoria.nombre,"color":categoria.color} for categoria in obtener_categorias(usuario_id)],
     }
 
     inicio_mes=fecha_seleccionada.replace(day=1)
@@ -715,6 +717,7 @@ def crear_encuesta():
             [(datetime.strptime(fecha,"%Y-%m-%d").strftime("%d/%m/%Y"),inicio,fin) for fecha,inicio,fin in opciones_formulario],
             invitados_ids,
             ubicacion=request.form.get("ubicacion",""),
+            repeticion="semanal" if request.form.get("repetir")=="semanal" else None,
         )
         
     except ValueError as error:
@@ -731,6 +734,7 @@ def mostrar_encuesta(encuesta_id,error=None):
         return "No encontramos esa encuesta.",404
     for opcion in encuesta["opciones"]:
         opcion["dia"]=nombre_del_dia(opcion["fecha"])
+        opcion["repite"]=texto_de_repeticion(encuesta["repeticion"],opcion["fecha"]) if encuesta["repeticion"] else None
     encuesta["lugar"]=datos_de_lugar(encuesta["ubicacion"])
     juntada=obtener_por_id(encuesta["juntada_id"]) if encuesta["juntada_id"] else None
     return render_template("encuesta.html",encuesta=encuesta,juntada=juntada,error=error)

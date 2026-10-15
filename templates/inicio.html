@@ -104,6 +104,7 @@
           <span class="encuesta-item-detalle">
             {{ "La armaste vos" if encuesta.es_organizador else "De " ~ encuesta.organizador }}
             · {{ encuesta.cantidad_opciones }} opciones
+            {% if encuesta.repeticion %}· Semanal{% endif %}
             {% if encuesta.ubicacion %}· {{ encuesta.ubicacion }}{% endif %}
           </span>
 
@@ -118,7 +119,7 @@
             {% else %}Empate entre <strong>{{ encuesta.opciones_lideres|join("</strong> y <strong>"|safe) }}</strong>{% endif %}
           </span>
           {% elif encuesta.situacion == "confirmada" %}
-          <span class="encuesta-item-resultado">Se juntan el <strong>{{ encuesta.cuando_se_juntan }}</strong></span>
+          <span class="encuesta-item-resultado">Se juntan el <strong>{{ encuesta.cuando_se_juntan }}</strong>{% if encuesta.repite %} y después {{ encuesta.repite|lower }}{% endif %}</span>
           {% elif encuesta.juntada_id %}
           <span class="encuesta-item-resultado">Se eligió una fecha, pero la juntada se canceló después</span>
           {% else %}
