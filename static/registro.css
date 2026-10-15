@@ -755,6 +755,7 @@ strong.grilla-linea {
   display: none;
 }
 
+[data-leyenda-todos]:not(:empty) + .leyenda-calendario,
 [data-leyenda-categorias]:not(:empty) + .leyenda-calendario {
   margin-top: 10px;
 }
@@ -3071,19 +3072,7 @@ strong.grilla-linea {
   }
 }
 
-
-.leyenda-ver-todos {
-  margin-top: 14px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-salvia-oscuro);
-  font-family: inherit;
-  font-size: 0.78rem;
-  font-weight: 500;
-  cursor: pointer;
+.leyenda-calendario i.leyenda-todos {
+  background: conic-gradient(#7c9473 0 25%, #6f86a8 0 50%, #d1a52a 0 75%, #b86b8a 0);
 }
 
-.leyenda-ver-todos:hover {
-  text-decoration: underline;
-}

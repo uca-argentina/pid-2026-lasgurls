@@ -16,10 +16,6 @@
   var MAXIMO_AVATARES = 3;
   var datos = null;
   var filtros = { categoria: {}, tipo: {} };
-  var verTodosLosFiltros = false;
-  try {
-    verTodosLosFiltros = window.localStorage.getItem("verTodosLosFiltros") === "si";
-  } catch (error) {}
 
   var crear = GrillaSemanal.crear;
   var textoHora = GrillaSemanal.textoHora;
@@ -116,17 +112,6 @@
       var valor = GRUPOS[grupo].valor(evento);
       if (valor && !opciones[valor]) opciones[valor] = evento;
     });
-    if (!verTodosLosFiltros) return opciones;
-    if (grupo === "tipo") {
-      Object.keys(ETIQUETAS).forEach(function (tipo) {
-        if (!opciones[tipo]) opciones[tipo] = { tipo: tipo };
-      });
-    } else {
-      (datos.categorias || []).forEach(function (categoria) {
-        if (!opciones[categoria.nombre]) opciones[categoria.nombre] = { tipo: "personal", color: categoria.color };
-      });
-      if (!opciones["Sin categoría"]) opciones["Sin categoría"] = { tipo: "personal" };
-    }
     return opciones;
   }
 
@@ -156,12 +141,29 @@
     });
   }
 
+  function hayFiltros() {
+    return Object.keys(filtros).some(function (grupo) { return Object.keys(filtros[grupo]).length > 0; });
+  }
+
+  function dibujarOpcionTodos() {
+    var lista = document.querySelector("[data-leyenda-todos]");
+    if (!lista) return;
+    lista.replaceChildren();
+    var hayOpciones = Object.keys(GRUPOS).some(function (grupo) { return Object.keys(opcionesDelGrupo(grupo)).length > 0; });
+    if (!hayOpciones) return;
+    var boton = crear("button", "leyenda-filtro" + (hayFiltros() ? " leyenda-filtro-apagada" : ""), "Todos");
+    boton.type = "button";
+    boton.dataset.filtroTodos = "";
+    boton.setAttribute("aria-pressed", String(!hayFiltros()));
+    boton.prepend(crear("i", "leyenda-todos"));
+    var item = crear("li");
+    item.appendChild(boton);
+    lista.appendChild(item);
+  }
+
   document.addEventListener("click", function (evento) {
-    if (!evento.target.closest("[data-ver-todos-los-filtros]") || !datos) return;
-    verTodosLosFiltros = !verTodosLosFiltros;
-    try {
-      window.localStorage.setItem("verTodosLosFiltros", verTodosLosFiltros ? "si" : "no");
-    } catch (error) {}
+    if (!evento.target.closest("[data-filtro-todos]") || !datos) return;
+    filtros = { categoria: {}, tipo: {} };
     dibujar(false);
   });
 
@@ -180,8 +182,7 @@
     if (!contenedor) return;
     dibujarLeyenda("categoria");
     dibujarLeyenda("tipo");
-    var verTodos = document.querySelector("[data-ver-todos-los-filtros]");
-    if (verTodos) verTodos.textContent = verTodosLosFiltros ? "Ver solo los de esta semana" : "Ver todos los filtros";
+    dibujarOpcionTodos();
 
     var eventos = datos.eventos.map(function (evento, indice) {
       return { inicio: new Date(evento.inicio).getTime(), fin: new Date(evento.fin).getTime(), indice: indice };

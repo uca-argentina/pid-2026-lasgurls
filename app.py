@@ -513,7 +513,6 @@ def mostrar_calendario():
         "dias":[dia_de_la_grilla(dia) for dia in dias_de_la_semana(lunes)],
         "eventos":eventos_de_la_semana,
         "urls":{"nuevo_evento":url_for("mostrar_nueva_agenda"),"nueva_juntada":url_for("mostrar_nueva_juntada")},
-        "categorias":[{"nombre":categoria.nombre,"color":categoria.color} for categoria in obtener_categorias(usuario_id)],
     }
 
     inicio_mes=fecha_seleccionada.replace(day=1)
