@@ -1140,6 +1140,7 @@ strong.grilla-linea {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
   margin-bottom: 18px;
 }
 
@@ -1151,6 +1152,8 @@ strong.grilla-linea {
 .campo input,
 .campo select {
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   font-family: inherit;
   font-size: 0.95rem;
   padding: 12px 14px;
@@ -2186,11 +2189,11 @@ strong.grilla-linea {
   align-items: baseline;
   justify-content: space-between;
   gap: 4px 12px;
-  margin-right: 24px;
+  margin: 0 24px;
 }
 
 .inicio-titulo-con-detalle .inicio-titulo {
-  margin-bottom: 12px;
+  margin: 0 0 12px;
 }
 
 .inicio-titulo-con-detalle .inicio-fecha {
@@ -2610,10 +2613,6 @@ strong.grilla-linea {
   text-decoration: none;
 }
 
-.lugar-abrir::after {
-  content: " ↗";
-}
-
 .lugar-abrir:hover {
   text-decoration: underline;
 }
@@ -2981,3 +2980,94 @@ strong.grilla-linea {
     transform: translate(-50%, 12px);
   }
 }
+
+@supports (-webkit-touch-callout: none) {
+  .campo input[type="date"],
+  .campo input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    min-height: 46px;
+    text-align: left;
+  }
+
+  .campo input[type="date"]::-webkit-date-and-time-value,
+  .campo input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]),
+  select:not([multiple]):not([size]),
+  textarea:not([rows]):not([cols]) {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 700px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select:not([multiple]):not([size]),
+  textarea:not([rows]):not([cols]) {
+    font-size: 16px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .fila-horarios:has(input[type="date"]):not(.opcion-encuesta) {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .header-contenido {
+    gap: 4px;
+    padding: 0 8px;
+  }
+
+  .header-nav {
+    gap: 0;
+    min-width: 0;
+  }
+
+  .header-link {
+    padding: 0 4px;
+    font-size: 0.8rem;
+  }
+
+  .header-acciones {
+    gap: 0;
+  }
+
+  .header-marca .logo-icono,
+  .header-marca svg {
+    width: 26px;
+    height: 26px;
+  }
+}
+
+@media (max-width: 800px) {
+  .inicio-titulo-con-detalle {
+    margin: 0 16px;
+  }
+
+  .inicio-vacio {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .inicio-acciones {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .inicio-acciones a:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .inicio-titulo-con-detalle .inicio-fecha {
+    margin-bottom: 12px;
+  }
+}
+
