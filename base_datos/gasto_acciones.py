@@ -3,6 +3,7 @@ from base_datos.configuracion import Session
 from base_datos.gasto_tabla import GastoTabla
 from base_datos.gasto_partes_tabla import GastoPartesTabla
 from base_datos.juntada_tabla import JuntadaTabla
+from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.notificacion_acciones import participantes
 
@@ -44,6 +45,28 @@ def borrarDeJuntada(sesion,juntadaID):
     gastosIDs=select(GastoTabla.id).where(GastoTabla.juntadaID==juntadaID)
     sesion.execute(delete(GastoPartesTabla).where(GastoPartesTabla.gastoID.in_(gastosIDs)))
     sesion.execute(delete(GastoTabla).where(GastoTabla.juntadaID==juntadaID))
+
+def personasDeJuntadas(juntadasIDs):
+    if not juntadasIDs:
+        return {}
+    with Session() as sesion:
+        personas={}
+        consultaOrganizadores=(
+            select(JuntadaTabla.id,UsuarioTabla.id,UsuarioTabla.nombre)
+            .join(UsuarioTabla,UsuarioTabla.id==JuntadaTabla.organizador_id)
+            .where(JuntadaTabla.id.in_(juntadasIDs))
+        )
+        for juntadaID,usuarioID,nombre in sesion.execute(consultaOrganizadores).all():
+            personas[juntadaID]=[{"id":usuarioID,"nombre":nombre}]
+        consultaInvitados=(
+            select(JuntadaInvitadosTabla.juntada_id,UsuarioTabla.id,UsuarioTabla.nombre)
+            .join(UsuarioTabla,UsuarioTabla.id==JuntadaInvitadosTabla.usuario_id)
+            .where(JuntadaInvitadosTabla.juntada_id.in_(juntadasIDs),JuntadaInvitadosTabla.estado!="No")
+            .order_by(UsuarioTabla.nombre)
+        )
+        for juntadaID,usuarioID,nombre in sesion.execute(consultaInvitados).all():
+            personas.setdefault(juntadaID,[]).append({"id":usuarioID,"nombre":nombre})
+        return personas
 
 def obtenerDeJuntadas(juntadasIDs):
     if not juntadasIDs:

@@ -18,6 +18,7 @@ from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
 from dominio.ubicacion import Ubicacion
+from dominio.gasto import Gasto
 from dominio.encuesta import Encuesta, MINIMO_OPCIONES, MAXIMO_OPCIONES 
 import base_datos.encuesta_acciones as encuesta_acciones
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
@@ -42,6 +43,7 @@ from base_datos.juntada_acciones import (
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
 from base_datos.notificacion_acciones import obtener_no_leidas, marcar_leidas, juntadas_reprogramadas
 from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
+from base_datos.gasto_acciones import guardar as guardarGasto, borrar as borrarGasto, obtenerDeJuntadas as obtenerGastos, personasDeJuntadas
 from base_datos.grupo_acciones import guardar as guardarGrupo, borrar as borrarGrupo, obtenerDeUsuario as obtenerGrupos
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
 from dominio.categoria import Categoria, COLORES
@@ -491,6 +493,16 @@ def mostrar_calendario():
             "texto":comentario.texto,
             "cuando":f"{comentario.fechaHora:%d/%m %H:%M}",
         })
+    gastosPorJuntada={}
+    for gasto in obtenerGastos(juntadasIDs):
+        gastosPorJuntada.setdefault(gasto["juntadaID"],[]).append({
+            "descripcion":gasto["descripcion"],
+            "monto":textoMonto(gasto["monto"]),
+            "pagador":"Vos" if gasto["pagadorID"]==usuario_id else gasto["pagador"],
+            "partes":[{"nombre":"Vos" if parte["usuarioID"]==usuario_id else parte["nombre"],"monto":textoMonto(parte["monto"])} for parte in gasto["partes"]],
+            "borrar":url_for("borrarGastoPropio",gastoID=gasto["id"]) if gasto["creadorID"]==usuario_id else None,
+        })
+    personasPorJuntada=personasDeJuntadas(juntadasIDs)
     for evento in eventos:
         inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
         dias_con_eventos.add(evento["fecha"])
@@ -505,6 +517,8 @@ def mostrar_calendario():
                 "juntadaID":evento["juntada_id"],
                 "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
                 "lugar":datos_de_lugar(evento["ubicacion"]),
+                "gastos":gastosPorJuntada.get(evento["juntada_id"],[]),
+                "personasGasto":[{"id":p["id"],"nombre":"Vos" if p["id"]==usuario_id else p["nombre"]} for p in personasPorJuntada.get(evento["juntada_id"],[])],
                 **acciones_del_evento(evento,ahora),
             })
 
@@ -512,6 +526,8 @@ def mostrar_calendario():
         "fecha":fecha_seleccionada.isoformat(),
         "dias":[dia_de_la_grilla(dia) for dia in dias_de_la_semana(lunes)],
         "eventos":eventos_de_la_semana,
+        "usuarioID":usuario_id,
+        "errorGasto":request.args.get("errorGasto"),
         "urls":{"nuevo_evento":url_for("mostrar_nueva_agenda"),"nueva_juntada":url_for("mostrar_nueva_juntada")},
     }
 
@@ -551,6 +567,7 @@ def acciones_del_evento(evento,ahora):
         "reprogramar":url_for("mostrar_reprogramar_juntada",juntada_id=juntada_id) if tipo=="organizo" and todavia_no_empezo else None,
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
+        "cargarGasto":url_for("cargarGasto",juntadaID=juntada_id) if juntada_id else None,
         "borrar":url_for("borrar_evento_propio",evento_id=evento["agenda_id"]) if tipo=="personal" else None,
     }
 
@@ -864,6 +881,44 @@ def comentarJuntada(juntadaID):
     if not guardarComentario(comentario,datetime.now()):
         return "No podes comentar en esta juntada",400
     return redirect(url_for("mostrar_calendario",fecha=request.form.get("fecha"),juntada=juntadaID))
+
+def textoMonto(monto):
+    entero,decimales=f"{monto:,.2f}".split(".")
+    return "$ "+entero.replace(",",".")+","+decimales
+
+def volverAlGasto(juntadaID,error=None):
+    return redirect(url_for("mostrar_calendario",fecha=request.form.get("fecha"),juntada=juntadaID,errorGasto=error))
+
+@app.route("/juntada/<int:juntadaID>/gasto",methods=["POST"])
+@login_requerido
+def cargarGasto(juntadaID):
+    usuarioID=session["usuarioID"]
+    participantesIDs=request.form.getlist("participantes",type=int)
+    partes=None
+    if request.form.get("division")=="personalizado":
+        partes={participanteID:request.form.get(f"parte_{participanteID}","") for participanteID in participantesIDs}
+    try:
+        gasto=Gasto(
+            juntadaID,usuarioID,
+            request.form.get("pagador",usuarioID,type=int),
+            request.form.get("descripcion"),
+            request.form.get("monto",""),
+            participantesIDs,
+            partes,
+        )
+    except ValueError as error:
+        return volverAlGasto(juntadaID,str(error))
+    if guardarGasto(gasto,datetime.now()) is None:
+        return volverAlGasto(juntadaID,"Solo los que participan de la juntada pueden estar en un gasto")
+    return volverAlGasto(juntadaID)
+
+@app.route("/gasto/<int:gastoID>/borrar",methods=["POST"])
+@login_requerido
+def borrarGastoPropio(gastoID):
+    juntadaID=request.form.get("juntada",type=int)
+    if not borrarGasto(gastoID,session["usuarioID"]):
+        return volverAlGasto(juntadaID,"Solo podes borrar los gastos que cargaste vos")
+    return volverAlGasto(juntadaID)
 
 @app.route("/amistad",methods=["GET"])
 @login_requerido
