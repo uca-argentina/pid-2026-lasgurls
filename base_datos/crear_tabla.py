@@ -10,6 +10,8 @@ from base_datos.grupo_tabla import GrupoTabla
 from base_datos.grupo_miembros_tabla import GrupoMiembrosTabla
 from base_datos.notificacion_tabla import NotificacionTabla
 from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla, EncuestaOcultaTabla
+from base_datos.gasto_tabla import GastoTabla
+from base_datos.gasto_partes_tabla import GastoPartesTabla
 
 Base.metadata.create_all(engine)
 print("tablas creadas!")
