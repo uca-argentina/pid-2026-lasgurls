@@ -900,6 +900,161 @@ strong.grilla-linea {
   margin-top: 18px;
 }
 
+.detalle-personas + .detalle-gastos,
+.detalle-gastos + .detalle-comentarios {
+  margin-top: 18px;
+}
+
+.detalle-gastos li {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.detalle-gasto {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.detalle-gasto-arriba {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.detalle-gasto-monto {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.detalle-gasto-reparto {
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+}
+
+.detalle-gasto-borrar button {
+  padding: 0;
+  font-size: 0.75rem;
+}
+
+.dialogo .detalle-gastos .detalle-aviso {
+  margin: 10px 0 0;
+}
+
+.gasto-agregar {
+  margin-top: 10px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.formulario-gasto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-fondo);
+}
+
+.gasto-campo {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.gasto-etiqueta {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.gasto-fila {
+  display: flex;
+  gap: 10px;
+}
+
+.formulario-gasto input:not([type="checkbox"]):not([type="radio"]),
+.formulario-gasto select {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-tarjeta);
+  color: var(--color-texto);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.formulario-gasto input:focus,
+.formulario-gasto select:focus {
+  outline: none;
+  border-color: var(--color-salvia);
+}
+
+.gasto-division {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.85rem;
+}
+
+.gasto-division label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.gasto-division input {
+  accent-color: var(--color-salvia);
+}
+
+.gasto-personas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gasto-persona {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.gasto-persona label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.formulario-gasto .gasto-parte {
+  width: 110px;
+  flex: 0 0 110px;
+}
+
+.dialogo .gasto-cuenta {
+  margin: 0;
+  color: var(--color-error);
+  font-size: 0.8rem;
+}
+
+.dialogo .gasto-cuenta.gasto-cuenta-ok {
+  color: var(--color-salvia-oscuro);
+}
+
+.formulario-gasto > button {
+  align-self: flex-end;
+}
+
 .detalle-comentarios li {
   align-items: flex-start;
 }
