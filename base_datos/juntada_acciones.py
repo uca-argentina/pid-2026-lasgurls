@@ -5,6 +5,7 @@ from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.categoria_tabla import CategoriaTabla
 from base_datos.comentario_tabla import ComentarioTabla
+from base_datos.gasto_acciones import borrarDeJuntada as borrarGastosDeJuntada
 from base_datos.notificacion_acciones import notificar, nombre_de_usuario, resaltar, marcar_leidas_de_juntadas
 from dominio.modulo_utilidades.rango_horario import ya_empezo
 from dominio.juntada.recurrencia import texto_de_repeticion
@@ -228,6 +229,7 @@ def _borrar_si_todos_rechazaron(sesion, juntadas_ids, ahora):
 
 
 def _borrar_juntada(sesion, juntada_id):
+    borrarGastosDeJuntada(sesion,juntada_id)
     sesion.execute(delete(ComentarioTabla).where(ComentarioTabla.juntadaID==juntada_id))
     sesion.execute(delete(JuntadaInvitadosTabla).where(JuntadaInvitadosTabla.juntada_id == juntada_id))
     sesion.execute(delete(JuntadaTabla).where(JuntadaTabla.id == juntada_id))

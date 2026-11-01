@@ -405,12 +405,207 @@
     return seccion;
   }
 
+  function aCentavos(texto){
+    var limpio=String(texto||"").trim().replace(",",".");
+    if(!/^\d+(\.\d{1,2})?$/.test(limpio))return null;
+    var partes=limpio.split(".");
+    return Number(partes[0])*100+Number(((partes[1]||"")+"00").slice(0,2));
+  }
+
+  function textoCentavos(centavos){
+    var entero=String(Math.floor(centavos/100)).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+    return "$ "+entero+","+String(centavos%100).padStart(2,"0");
+  }
+
+  function campoGasto(etiqueta,control){
+    var campo=crear("label","gasto-campo");
+    campo.append(crear("span","gasto-etiqueta",etiqueta),control);
+    return campo;
+  }
+
+  function formularioDeGasto(evento){
+    var formulario=formularioPost(evento.cargarGasto,{},"Guardar gasto","boton-principal");
+    formulario.className="formulario-gasto";
+    var guardar=formulario.lastChild;
+
+    var descripcion=crear("input");
+    descripcion.name="descripcion";
+    descripcion.maxLength=60;
+    descripcion.required=true;
+    descripcion.placeholder="Por ejemplo: pizzas";
+    descripcion.dataset.mensaje="Escribi que fue el gasto";
+
+    var monto=crear("input");
+    monto.name="monto";
+    monto.inputMode="decimal";
+    monto.required=true;
+    monto.placeholder="0,00";
+    monto.dataset.mensaje="Escribi cuanto salio";
+
+    var pagador=crear("select");
+    pagador.name="pagador";
+    evento.personasGasto.forEach(function(persona){
+      var opcion=crear("option","",persona.nombre);
+      opcion.value=persona.id;
+      opcion.selected=persona.id===datos.usuarioID;
+      pagador.appendChild(opcion);
+    });
+
+    var personas=crear("div","gasto-personas");
+    personas.dataset.requiereUno="Elegi al menos una persona para dividir el gasto";
+    evento.personasGasto.forEach(function(persona){
+      var fila=crear("div","gasto-persona");
+      var casilla=crear("input");
+      casilla.type="checkbox";
+      casilla.name="participantes";
+      casilla.value=persona.id;
+      casilla.checked=true;
+      casilla.id="gasto-persona-"+persona.id;
+      var nombre=crear("label","",persona.nombre);
+      nombre.htmlFor=casilla.id;
+      var parte=crear("input","gasto-parte");
+      parte.name="parte_"+persona.id;
+      parte.inputMode="decimal";
+      parte.placeholder="0,00";
+      parte.setAttribute("aria-label","Parte de "+persona.nombre);
+      parte.required=true;
+      parte.dataset.mensaje="Pone cuanto le toca a "+persona.nombre;
+      fila.append(casilla,nombre,parte);
+      personas.appendChild(fila);
+    });
+
+    var division=crear("div","gasto-division");
+    [["iguales","Partes iguales"],["personalizado","Personalizado"]].forEach(function(opcion,indice){
+      var etiqueta=crear("label");
+      var radio=crear("input");
+      radio.type="radio";
+      radio.name="division";
+      radio.value=opcion[0];
+      radio.checked=indice===0;
+      etiqueta.append(radio,crear("span","",opcion[1]));
+      division.appendChild(etiqueta);
+    });
+
+    var cuenta=crear("p","gasto-cuenta");
+
+    function actualizar(){
+      var personalizado=formulario.querySelector('input[name="division"]:checked').value==="personalizado";
+      var suma=0;
+      var elegidas=0;
+      personas.querySelectorAll(".gasto-persona").forEach(function(fila){
+        var casilla=fila.querySelector('input[type="checkbox"]');
+        var parte=fila.querySelector(".gasto-parte");
+        parte.hidden=!personalizado||!casilla.checked;
+        parte.disabled=parte.hidden;
+        if(casilla.checked){
+          elegidas++;
+          suma+=aCentavos(parte.value)||0;
+        }
+      });
+      var total=aCentavos(monto.value);
+      cuenta.hidden=!personalizado||total===null||!elegidas;
+      cuenta.classList.remove("gasto-cuenta-ok");
+      if(cuenta.hidden)return;
+      if(suma===total){
+        cuenta.textContent="Suma justo el total";
+        cuenta.classList.add("gasto-cuenta-ok");
+      }else if(suma<total){
+        cuenta.textContent="Faltan "+textoCentavos(total-suma)+" para llegar al total";
+      }else{
+        cuenta.textContent="Te pasaste por "+textoCentavos(suma-total);
+      }
+    }
+    formulario.addEventListener("input",actualizar);
+    formulario.addEventListener("change",actualizar);
+
+    function problemaDelGasto(){
+      var total=aCentavos(monto.value);
+      if(total===null)return "Escribi un monto valido";
+      if(total===0)return "El monto tiene que ser mayor a 0";
+      if(formulario.querySelector('input[name="division"]:checked').value!=="personalizado")return null;
+      var suma=0;
+      var problema=null;
+      personas.querySelectorAll(".gasto-persona").forEach(function(fila){
+        if(problema||!fila.querySelector('input[type="checkbox"]').checked)return;
+        var parte=aCentavos(fila.querySelector(".gasto-parte").value);
+        if(!parte)problema="Escribi un monto valido";
+        else suma+=parte;
+      });
+      if(problema)return problema;
+      if(suma!==total)return "Las partes tienen que sumar el total del gasto";
+      return null;
+    }
+
+    formulario.addEventListener("submit",function(eventoEnvio){
+      var problema=problemaDelGasto();
+      if(!problema)return;
+      eventoEnvio.preventDefault();
+      cuenta.hidden=false;
+      cuenta.classList.remove("gasto-cuenta-ok");
+      cuenta.textContent=problema;
+    });
+
+    var montoYPagador=crear("div","gasto-fila");
+    montoYPagador.append(campoGasto("Cuanto",monto),campoGasto("Pago",pagador));
+    formulario.insertBefore(campoGasto("Que fue",descripcion),guardar);
+    formulario.insertBefore(montoYPagador,guardar);
+    formulario.insertBefore(crear("span","gasto-etiqueta","Entre quienes"),guardar);
+    formulario.insertBefore(division,guardar);
+    formulario.insertBefore(personas,guardar);
+    formulario.insertBefore(cuenta,guardar);
+    actualizar();
+    return formulario;
+  }
+
+  function seccionDeGastos(evento){
+    var seccion=crear("div","detalle-personas detalle-gastos");
+    seccion.appendChild(crear("p","detalle-personas-titulo","Gastos"));
+    if(evento.gastos.length){
+      var lista=crear("ul");
+      evento.gastos.forEach(function(gasto){
+        var item=crear("li");
+        var cuerpo=crear("div","detalle-gasto");
+        var arriba=crear("div","detalle-gasto-arriba");
+        arriba.append(crear("strong","",gasto.descripcion),crear("span","detalle-gasto-monto",gasto.monto));
+        var reparto=gasto.partes.map(function(parte){return parte.nombre+" "+parte.monto;}).join(", ");
+        cuerpo.append(arriba,crear("span","detalle-gasto-reparto","Pago "+gasto.pagador+" · "+reparto));
+        item.appendChild(cuerpo);
+        if(gasto.borrar){
+          var borrar=formularioPost(gasto.borrar,{juntada:evento.juntadaID},"Borrar","boton-texto");
+          borrar.className="detalle-gasto-borrar";
+          item.appendChild(borrar);
+        }
+        lista.appendChild(item);
+      });
+      seccion.appendChild(lista);
+    }else{
+      seccion.appendChild(crear("p","detalle-sin-comentarios","Todavia no hay gastos"));
+    }
+    var error=datos.errorGasto&&datos.errorGastoJuntada===evento.juntadaID?datos.errorGasto:null;
+    datos.errorGasto=null;
+    if(error)seccion.appendChild(crear("p","detalle-aviso",error));
+    var formulario=formularioDeGasto(evento);
+    formulario.hidden=!error;
+    var agregar=crear("button","boton-neutro boton-chico gasto-agregar","Agregar gasto");
+    agregar.type="button";
+    agregar.hidden=!!error;
+    agregar.addEventListener("click",function(){
+      formulario.hidden=false;
+      agregar.hidden=true;
+      formulario.querySelector('input[name="descripcion"]').focus();
+    });
+    seccion.append(agregar,formulario);
+    return seccion;
+  }
+
   function abrirJuntadaPedida(){
     var url=new URL(window.location.href);
     var juntadaID=Number(url.searchParams.get("juntada"));
     if(!juntadaID)return;
     url.searchParams.delete("juntada");
+    url.searchParams.delete("errorGasto");
     window.history.replaceState({},"",url.pathname+url.search);
+    datos.errorGastoJuntada=juntadaID;
     var evento=datos.eventos.find(function(item){return item.juntadaID===juntadaID;});
     if(evento)mostrarDetalle(evento);
   }
@@ -466,6 +661,7 @@
     var contenido = [arriba, tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
     if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
+    if(evento.cargarGasto)contenido.push(seccionDeGastos(evento));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));
     if(acciones.children.length)contenido.push(acciones);
     dialogo.replaceChildren.apply(dialogo, contenido);
