@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block titulo %}Check-in{% endblock %}
+
+{% block contenido %}
+{% from "_iconos.html" import icono %}
+<div class="tarjeta-formulario checkin" data-checkin data-organiza="{{ '1' if organiza else '' }}"
+     data-url-qr="{{ url_for('codigo_de_checkin', juntada_id=juntada.id) }}" data-url-checkin="{{ url_for('hacer_checkin') }}">
+  <div class="encabezado-tarjeta">
+    <div>
+      <h2>{{ juntada.titulo }}</h2>
+      <p class="checkin-cuando">{{ cuando }}</p>
+    </div>
+  </div>
+
+  {% if not abierto %}
+  <p class="checkin-explicacion">El check-in se abre 15 minutos antes de que empiece la juntada y se cierra una hora después de que termina.</p>
+  <a href="{{ url_for('mostrar_calendario', fecha=juntada.fecha.isoformat(), juntada=juntada.id) }}" class="boton-neutro">Volver a la juntada</a>
+
+  {% elif organiza %}
+  <p class="checkin-explicacion">Mostrales este QR a los que vinieron. Cambia cada 10 segundos y lleva tu ubicación, así que no sirve mandarle una foto a alguien que no está.</p>
+  <button type="button" class="boton-principal checkin-empezar" data-empezar>Mostrar QR</button>
+  <div class="checkin-qr" data-qr hidden>
+    <div class="checkin-qr-imagen" data-qr-imagen></div>
+    <span class="checkin-qr-tiempo" data-qr-tiempo></span>
+  </div>
+  <p class="checkin-estado" data-estado role="status"></p>
+  <div class="checkin-presentes">
+    <p class="detalle-personas-titulo">Ya hicieron check-in</p>
+    <ul data-presentes>
+      {% for nombre in presentes %}<li>{{ nombre }}</li>{% else %}<li class="checkin-nadie">Todavía nadie</li>{% endfor %}
+    </ul>
+  </div>
+
+  {% elif ya_hizo %}
+  <div class="checkin-listo">
+    <span class="checkin-listo-icono" aria-hidden="true">{{ icono("tilde", 28) }}</span>
+    <strong>Ya hiciste check-in en esta juntada</strong>
+    <a href="{{ url_for('mostrar_perfil') }}#mi-estilo" class="boton-neutro">Ver mi racha</a>
+  </div>
+
+  {% else %}
+  <p class="checkin-explicacion">Escaneá el QR que muestra quien organiza. Te vamos a pedir la ubicación para chequear que estén en el mismo lugar.</p>
+  <button type="button" class="boton-principal checkin-empezar" data-empezar>Escanear QR</button>
+  <div class="checkin-lector" id="lector-qr" data-lector hidden></div>
+  <p class="checkin-estado" data-estado role="status"></p>
+  <div class="checkin-listo" data-listo hidden>
+    <span class="checkin-listo-icono" aria-hidden="true">{{ icono("tilde", 28) }}</span>
+    <strong data-listo-mensaje></strong>
+    <span class="racha-fuego" data-listo-racha hidden></span>
+    <a href="{{ url_for('mostrar_perfil') }}#mi-estilo" class="boton-neutro">Ver mi racha</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if abierto and organiza %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+{% elif abierto and not ya_hizo %}
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+{% endif %}
+<script src="{{ url_for('static', filename='checkin.js') }}" defer></script>
+{% endblock %}

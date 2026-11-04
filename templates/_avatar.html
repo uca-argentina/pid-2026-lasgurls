@@ -1,0 +1,18 @@
+{% macro avatar(texto, estilo=None, clase="", con_marco=True) -%}
+{%- set estilo = estilo or {} -%}
+{%- set forma = " avatar-" ~ estilo.forma if estilo.forma else "" -%}
+{%- set nucleo -%}
+<span class="avatar{{ forma }}{% if clase %} {{ clase }}{% endif %}"{% if estilo.color %} style="background: {{ estilo.color }}"{% endif %}>{{ texto }}</span>
+{%- endset -%}
+{%- if con_marco and estilo.marco -%}
+<span class="avatar-marco avatar-marco-{{ estilo.marco }}{{ forma }}">{{ nucleo }}</span>
+{%- else -%}
+{{ nucleo }}
+{%- endif -%}
+{%- endmacro %}
+
+{% macro nombre(texto, estilo=None) -%}
+{%- set estilo = estilo or {} -%}
+<span class="nombre-con-estilo{% if estilo.degrade %} nombre-degrade{% endif %}">{{ texto }}</span>
+{%- if estilo.racha %}<span class="racha-fuego" title="{{ estilo.racha }} juntadas seguidas cumplidas">🔥 {{ estilo.racha }}</span>{% endif %}
+{%- endmacro %}

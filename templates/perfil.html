@@ -31,6 +31,123 @@
     </div>
     <button type="submit" class="boton-enviar">Guardar cambios</button>
   </form>
+  {% from "_avatar.html" import avatar, nombre as nombre_con_estilo %}
+  {% from "_iconos.html" import icono %}
+  <div class="seccion" id="mi-estilo">
+    <h3 class="titulo-seccion">Mis juntadas</h3>
+    <p class="subtitulo-seccion">Cada vez que vas a una juntada y hacés check-in, sumás a tu racha. Si dijiste que sí, la juntada se hizo y no hiciste check-in, la racha vuelve a cero. Lo que desbloqueaste no se pierde nunca.</p>
+
+    <div class="logros-cabecera">
+      <span data-vista-previa>{{ avatar(usuario_actual.nombre|iniciales, estilo, "avatar-grande") }}</span>
+      <div class="logros-identidad">
+        <strong>{{ nombre_con_estilo(usuario_actual.nombre, estilo) }}</strong>
+        {% if estilo.titulo %}<span class="titulo-perfil">{{ estilo.titulo }}</span>{% endif %}
+      </div>
+    </div>
+
+    <ul class="logros-numeros">
+      <li><strong>{% if logros.tiene_fuego %}🔥 {% endif %}{{ logros.racha_actual }}</strong><span>racha actual</span></li>
+      <li><strong>{{ logros.racha_maxima }}</strong><span>mejor racha</span></li>
+      <li><strong>{{ logros.cumplidas }}</strong><span>juntadas cumplidas</span></li>
+      <li><strong>{% if logros.palabra is not none %}{{ logros.palabra }}%{% else %}–{% endif %}</strong><span>palabra cumplida</span></li>
+    </ul>
+
+    {% if proximo %}
+    <p class="logros-proximo">
+      {% if proximo.mide == "cumplidas" %}
+      Hacé check-in en tu primera juntada para desbloquear <strong>{{ proximo.nombre|lower }}</strong>.
+      {% else %}
+      Te {{ "falta" if proximo.faltan == 1 else "faltan" }} {{ proximo.faltan }} {{ "juntada seguida" if proximo.faltan == 1 else "juntadas seguidas" }} para desbloquear <strong>{{ proximo.nombre|lower }}</strong>.
+      {% endif %}
+    </p>
+    {% endif %}
+
+    <ul class="logros-desbloqueos">
+      {% for desbloqueo in progreso %}
+      <li class="logro{% if desbloqueo.logrado %} logro-logrado{% endif %}">
+        <span class="logro-icono" aria-hidden="true">{% if desbloqueo.logrado %}{{ icono("tilde") }}{% else %}{{ icono("candado") }}{% endif %}</span>
+        <span class="logro-texto">
+          <strong>{{ desbloqueo.nombre }}</strong>
+          <span>{% if desbloqueo.mide == "cumplidas" %}Tu primera juntada cumplida{% else %}Racha de {{ desbloqueo.meta }}{% endif %}{% if not desbloqueo.logrado %} · {{ desbloqueo.avance }}/{{ desbloqueo.meta }}{% endif %}</span>
+        </span>
+        <span class="logro-barra" aria-hidden="true"><i style="width: {{ (desbloqueo.avance / desbloqueo.meta * 100)|round|int }}%"></i></span>
+      </li>
+      {% endfor %}
+    </ul>
+
+    <div class="resumen-mes">
+      <h4>Tu {{ nombre_mes }}</h4>
+      {% if resumen.cantidad %}
+      <ul class="resumen-mes-datos">
+        <li><strong>{{ resumen.cantidad }}</strong> {{ "juntada cumplida" if resumen.cantidad == 1 else "juntadas cumplidas" }}</li>
+        <li><strong>{{ resumen.organizadas }}</strong> {{ "organizada por vos" if resumen.organizadas == 1 else "organizadas por vos" }}</li>
+        <li><strong>{{ resumen.personas }}</strong> {{ "persona distinta" if resumen.personas == 1 else "personas distintas" }}</li>
+      </ul>
+      {% if resumen.mas_vista %}
+      <p class="resumen-mes-destacado">La persona que más viste: <strong>{{ resumen.mas_vista.nombre }}</strong> ({{ resumen.mas_vista.veces }} {{ "vez" if resumen.mas_vista.veces == 1 else "veces" }})</p>
+      {% endif %}
+      {% else %}
+      <p class="resumen-mes-vacio">Todavía no tenés juntadas cumplidas este mes.</p>
+      {% endif %}
+    </div>
+
+    <form method="POST" action="{{ url_for('guardar_estilo_propio') }}" class="formulario-estilo" data-formulario-estilo data-iniciales="{{ usuario_actual.nombre|iniciales }}">
+      <input type="hidden" name="token" value="{{ session['perfil_token'] }}">
+
+      <fieldset class="estilo-grupo"{% if "color" not in desbloqueados %} disabled{% endif %}>
+        <legend>Color del avatar{% if "color" not in desbloqueados %} <span class="estilo-bloqueado">{{ icono("candado", 13) }} Tu primera juntada cumplida</span>{% endif %}</legend>
+        <div class="estilo-opciones">
+          <label class="estilo-color" title="Original"><input type="radio" name="color" value=""{% if not estilo.color %} checked{% endif %}><i style="background: var(--color-salvia)"></i><span class="estilo-sr">Original</span></label>
+          {% for valor, texto in colores_avatar.items() %}
+          <label class="estilo-color" title="{{ texto }}"><input type="radio" name="color" value="{{ valor }}"{% if estilo.color == valor %} checked{% endif %}><i style="background: {{ valor }}"></i><span class="estilo-sr">{{ texto }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="estilo-grupo"{% if "forma" not in desbloqueados %} disabled{% endif %}>
+        <legend>Forma{% if "forma" not in desbloqueados %} <span class="estilo-bloqueado">{{ icono("candado", 13) }} Racha de 3</span>{% endif %}</legend>
+        <div class="estilo-opciones">
+          {% for valor, texto in formas.items() %}
+          <label class="estilo-opcion"><input type="radio" name="forma" value="{{ '' if valor == 'circulo' else valor }}"{% if (estilo.forma or 'circulo') == valor %} checked{% endif %}>{{ avatar(usuario_actual.nombre|iniciales, {"forma": None if valor == "circulo" else valor}, "avatar-chico") }}<span>{{ texto }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="estilo-grupo"{% if "marco" not in desbloqueados %} disabled{% endif %}>
+        <legend>Marco{% if "marco" not in desbloqueados %} <span class="estilo-bloqueado">{{ icono("candado", 13) }} Racha de 5</span>{% endif %}</legend>
+        <div class="estilo-opciones">
+          <label class="estilo-opcion"><input type="radio" name="marco" value=""{% if not estilo.marco %} checked{% endif %}>{{ avatar(usuario_actual.nombre|iniciales, {}, "avatar-chico") }}<span>Sin marco</span></label>
+          {% for valor, texto in marcos.items() %}
+          <label class="estilo-opcion"><input type="radio" name="marco" value="{{ valor }}"{% if estilo.marco == valor %} checked{% endif %}>{{ avatar(usuario_actual.nombre|iniciales, {"marco": valor}, "avatar-chico") }}<span>{{ texto }}</span></label>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <fieldset class="estilo-grupo"{% if "titulo" not in desbloqueados %} disabled{% endif %}>
+        <legend>Nombre y título{% if "titulo" not in desbloqueados %} <span class="estilo-bloqueado">{{ icono("candado", 13) }} Racha de 10</span>{% endif %}</legend>
+        <label class="fila fila-seleccionable">
+          <input type="checkbox" name="degrade"{% if estilo.degrade %} checked{% endif %}>
+          <span class="fila-info">
+            <span class="fila-nombre"><span class="nombre-degrade">{{ usuario_actual.nombre }}</span></span>
+            <span class="fila-detalle">Tu nombre con degradé en tu perfil y en las juntadas.</span>
+          </span>
+        </label>
+        <div class="campo">
+          <label for="titulo-perfil">Título</label>
+          <select id="titulo-perfil" name="titulo">
+            <option value="">Sin título</option>
+            {% for titulo in titulos %}
+            <option value="{{ titulo }}"{% if estilo.titulo == titulo %} selected{% endif %}>{{ titulo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </fieldset>
+
+      {% if desbloqueados %}
+      <button type="submit" class="boton-enviar">Guardar estilo</button>
+      {% endif %}
+    </form>
+  </div>
   <div class="seccion">
     <h3 class="titulo-seccion">Categorías</h3>
     <p class="subtitulo-seccion">Para ordenar tus eventos. Tus amigos no las ven.</p>
@@ -71,4 +188,5 @@
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='categorias.js') }}" defer></script>
+<script src="{{ url_for('static', filename='estilo.js') }}" defer></script>
 {% endblock %}

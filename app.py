@@ -49,6 +49,9 @@ from base_datos.categoria_acciones import obtener_categorias, crear_categoria, b
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
 from dominio.disponibilidad.buscador_huecos import buscar_huecos, huecos_del_dia, proxima_media_hora
+from dominio.gamificacion.checkin import Posicion, generar_codigo, leer_codigo, se_puede_hacer_checkin, SEGUNDOS_POR_CODIGO
+from dominio.gamificacion.logros import Logros, Estilo, resumen_del_mes, COLORES_AVATAR, FORMAS, MARCOS, TITULOS
+from base_datos.gamificacion_acciones import registrar_checkin, presentes, juntadas_con_asistencia, historiales, estilos_de, guardar_estilo
 
 NOMBRES_MES = [
     "", "enero", "febrero", "marzo", "abril", "mayo", "junio",
@@ -131,6 +134,43 @@ def invitaciones_del_usuario(inicio,fin):
         g.invitaciones=obtener_invitaciones_del_calendario(g.usuario.id,inicio,fin)
     return g.invitaciones
 
+def logros_de(usuarios_ids):
+    if "logros" not in g:
+        g.logros={}
+        g.historiales={}
+    faltan=[usuario_id for usuario_id in set(usuarios_ids) if usuario_id not in g.logros]
+    if faltan:
+        g.historiales.update(historiales(faltan,datetime.now()))
+        for usuario_id in faltan:
+            g.logros[usuario_id]=Logros([item["cumplio"] for item in g.historiales.get(usuario_id,[])])
+    return g.logros
+
+def estilos_visibles(usuarios_ids):
+    if "estilos" not in g:
+        g.estilos={}
+    faltan=[usuario_id for usuario_id in set(usuarios_ids) if usuario_id not in g.estilos]
+    if faltan:
+        logros=logros_de(faltan)
+        guardados=estilos_de(faltan)
+        for usuario_id in faltan:
+            estilo=guardados.get(usuario_id)
+            g.estilos[usuario_id]={
+                "color":estilo.color if estilo else None,
+                "forma":estilo.forma if estilo else None,
+                "marco":estilo.marco if estilo else None,
+                "titulo":estilo.titulo if estilo else None,
+                "degrade":bool(estilo and estilo.degrade),
+                "racha":logros[usuario_id].racha_actual if logros[usuario_id].tiene_fuego else 0,
+            }
+    return g.estilos
+
+@app.template_global()
+def estilos_de_usuarios(usuarios_ids):
+    return estilos_visibles(usuarios_ids)
+
+def estilo_del_usuario_actual():
+    return estilos_visibles([g.usuario.id])[g.usuario.id]
+
 def solicitudes_recibidas():
     if "solicitudes" not in g:
         g.solicitudes=[
@@ -166,6 +206,7 @@ def datos_del_header():
 
     return {
         "usuario_actual":usuario,
+        "estilo_actual":estilo_del_usuario_actual,
         "notificaciones_juntadas":invitaciones,
         "notificaciones_amistad":solicitudes,
         "notificaciones_avisos":avisos,
@@ -228,11 +269,23 @@ def logout():
     session.clear()
     return redirect(url_for("mostrar_login"))
 
+def datos_de_logros():
+    usuario_id=g.usuario.id
+    logros=logros_de([usuario_id])[usuario_id]
+    hoy=date.today()
+    cumplidas=[item for item in g.historiales.get(usuario_id,[]) if item["cumplio"]]
+    return {
+        "logros":logros,"desbloqueados":logros.desbloqueados(),"progreso":logros.progreso(),"proximo":logros.proximo(),
+        "estilo":estilo_del_usuario_actual(),"colores_avatar":COLORES_AVATAR,"formas":FORMAS,"marcos":MARCOS,"titulos":TITULOS,
+        "resumen":resumen_del_mes(cumplidas,hoy.year,hoy.month),"nombre_mes":NOMBRES_MES[hoy.month],
+    }
+
 def pagina_perfil(nombre, email, error, guardado):
     return render_template(
         "perfil.html", nombre=nombre, email=email, error=error, guardado=guardado,
         categorias=obtener_categorias(g.usuario.id), colores=COLORES,
         compartir_disponibilidad=g.usuario.compartir_disponibilidad,
+        **datos_de_logros(),
     )
 
 @app.route("/perfil",methods=["GET","POST"])
@@ -264,6 +317,25 @@ def mostrar_perfil():
 
     guardado=session.pop("perfil_guardado",False)
     return pagina_perfil(nombre, email, error, guardado), estado
+
+@app.route("/perfil/estilo",methods=["POST"])
+@login_requerido
+def guardar_estilo_propio():
+    token=session.get("perfil_token")
+    if not token or not secrets.compare_digest(request.form.get("token",""),token):
+        return "El formulario venció. Recargá la página e intentá nuevamente.",400
+    usuario=g.usuario
+    logros=logros_de([usuario.id])[usuario.id]
+    try:
+        estilo=Estilo(
+            request.form.get("color"),request.form.get("forma"),request.form.get("marco"),request.form.get("titulo"),
+            "degrade" in request.form,logros.desbloqueados(),
+        )
+    except ValueError as error:
+        return pagina_perfil(usuario.nombre,usuario.email,str(error),False),400
+    guardar_estilo(usuario.id,estilo)
+    session["perfil_guardado"]=True
+    return redirect(url_for("mostrar_perfil")+"#mi-estilo")
 
 @app.route("/perfil/baja",methods=["POST"])
 @login_requerido
@@ -306,18 +378,18 @@ def eventos_del_usuario(usuario_id,desde,hasta):
         })
 
     organizadas={}
-    for juntada,nombre_invitado,estado,categoria,color in obtener_organizadas(usuario_id,desde,hasta):
+    for juntada,nombre_invitado,estado,categoria,color,invitado_id in obtener_organizadas(usuario_id,desde,hasta):
         invitados=organizadas.setdefault(juntada.id,(juntada,[],categoria,color))[1]
         if nombre_invitado is not None:
-            invitados.append((nombre_invitado,estado))
+            invitados.append((nombre_invitado,estado,invitado_id))
 
     for juntada,invitados,categoria,color in organizadas.values():
-        confirmados=sum(1 for _,estado in invitados if estado=="Si")
+        confirmados=sum(1 for _,estado,_ in invitados if estado=="Si")
         eventos.append({
             "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
             "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"serie_id":juntada.serie_id,"categoria":categoria,"color":color,
-            "personas":[persona(g.usuario.nombre,"organiza",es_vos=True)]+[persona(nombre,estado) for nombre,estado in invitados],
+            "personas":[persona(g.usuario.nombre,"organiza",usuario_id,es_vos=True)]+[persona(nombre,estado,invitado_id) for nombre,estado,invitado_id in invitados],
             "ubicacion":juntada.ubicacion,
         })
 
@@ -326,7 +398,7 @@ def eventos_del_usuario(usuario_id,desde,hasta):
     ]
     invitados_por_juntada={}
     for juntada_id,invitado_id,nombre,estado in obtener_invitados_de_juntadas([fila[1].id for fila in invitaciones]):
-        invitados_por_juntada.setdefault(juntada_id,[]).append(persona(nombre,estado,es_vos=invitado_id==usuario_id))
+        invitados_por_juntada.setdefault(juntada_id,[]).append(persona(nombre,estado,invitado_id,es_vos=invitado_id==usuario_id))
 
     for invitacion,juntada,organizador,categoria,color in invitaciones:
         respuesta={"Si":"Confirmaste","Tal vez":"Dijiste tal vez"}.get(invitacion.estado,"Todavía no respondiste")
@@ -335,10 +407,17 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "tipo":{"Si":"confirmada","Tal vez":"tal_vez"}.get(invitacion.estado,"pendiente"),
             "detalle":f"Te invitó {organizador} · {respuesta}"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
-            "personas":[persona(organizador,"organiza")]+invitados_por_juntada.get(juntada.id,[]),
+            "personas":[persona(organizador,"organiza",juntada.organizador_id)]+invitados_por_juntada.get(juntada.id,[]),
             "ubicacion":juntada.ubicacion,
         })
+    agregar_estilos(eventos)
     return eventos
+
+def agregar_estilos(eventos):
+    personas=[item for evento in eventos for item in evento.get("personas",[])]
+    estilos=estilos_visibles([item["id"] for item in personas])
+    for item in personas:
+        item["estilo"]=estilos[item["id"]]
 
 HORA_INICIO_SEMANA=8
 MAXIMO_PROXIMAS=5
@@ -440,11 +519,26 @@ def mostrar_inicio():
     return render_template(
         "inicio.html",
         hoy=nombre_del_dia(hoy),
+        checkins=checkins_abiertos(eventos,ahora),
         proximas=proximas_juntadas(eventos,ahora),
         semana=mi_semana(lunes,eventos,ahora),
         titulo_semana=titulo_semana(lunes),
         encuestas=[resumen_de_encuesta(encuesta) for encuesta in encuesta_acciones.obtener_de_usuario(session["usuarioID"])],
     )
+
+def checkins_abiertos(eventos,ahora):
+    abiertos=[
+        evento for evento in eventos
+        if evento["juntada_id"] and se_puede_hacer_checkin(evento["fecha"],evento["hora_inicio"],evento["hora_fin"],ahora)
+    ]
+    asistidas=juntadas_con_asistencia(session["usuarioID"],[evento["juntada_id"] for evento in abiertos])
+    return [{
+        "titulo":evento["titulo"],
+        "empezo":ya_empezo(evento["fecha"],evento["hora_inicio"],ahora),
+        "hora":f"{evento['hora_inicio']:%H:%M}",
+        "organiza":evento["tipo"]=="organizo",
+        "url":url_for("mostrar_checkin",juntada_id=evento["juntada_id"]),
+    } for evento in abiertos if evento["juntada_id"] not in asistidas]
 
 def fecha_corta(fecha):
     return f"{DIAS_SEMANA[fecha.weekday()].capitalize()} {fecha.day}/{fecha.month}"
@@ -486,10 +580,13 @@ def mostrar_calendario():
     eventos_de_la_semana=[]
     juntadasIDs=[evento["juntada_id"] for evento in eventos if evento["juntada_id"]]
     comentariosPorJuntada={}
-    for comentario,nombre in obtenerComentarios(juntadasIDs):
+    comentarios=obtenerComentarios(juntadasIDs)
+    estilosComentarios=estilos_visibles([comentario.usuarioID for comentario,_ in comentarios])
+    for comentario,nombre in comentarios:
         comentariosPorJuntada.setdefault(comentario.juntadaID,[]).append({
             "nombre":"Vos" if comentario.usuarioID==usuario_id else nombre,
             "iniciales":iniciales(nombre),
+            "estilo":estilosComentarios[comentario.usuarioID],
             "texto":comentario.texto,
             "cuando":f"{comentario.fechaHora:%d/%m %H:%M}",
         })
@@ -503,6 +600,7 @@ def mostrar_calendario():
             "borrar":url_for("borrarGastoPropio",gastoID=gasto["id"]) if gasto["creadorID"]==usuario_id else None,
         })
     personasPorJuntada=personasDeJuntadas(juntadasIDs)
+    asistidas=juntadas_con_asistencia(usuario_id,juntadasIDs)
     for evento in eventos:
         inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
         dias_con_eventos.add(evento["fecha"])
@@ -519,6 +617,7 @@ def mostrar_calendario():
                 "lugar":datos_de_lugar(evento["ubicacion"]),
                 "gastos":gastosPorJuntada.get(evento["juntada_id"],[]),
                 "personasGasto":[{"id":p["id"],"nombre":"Vos" if p["id"]==usuario_id else p["nombre"]} for p in personasPorJuntada.get(evento["juntada_id"],[])],
+                "asistio":evento["juntada_id"] in asistidas,
                 **acciones_del_evento(evento,ahora),
             })
 
@@ -553,8 +652,8 @@ def texto_repeticion(juntada):
     texto=texto_de_repeticion(juntada.repeticion,juntada.fecha)
     return f" · {texto}" if texto else ""
 
-def persona(nombre,estado,es_vos=False):
-    return {"nombre":"Vos" if es_vos else nombre,"iniciales":iniciales(nombre),"estado":estado}
+def persona(nombre,estado,usuario_id,es_vos=False):
+    return {"id":usuario_id,"nombre":"Vos" if es_vos else nombre,"iniciales":iniciales(nombre),"estado":estado}
 
 def acciones_del_evento(evento,ahora):
     tipo=evento["tipo"]
@@ -568,6 +667,7 @@ def acciones_del_evento(evento,ahora):
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
         "cargarGasto":url_for("cargarGasto",juntadaID=juntada_id) if juntada_id else None,
+        "checkin":url_for("mostrar_checkin",juntada_id=juntada_id) if juntada_id and se_puede_hacer_checkin(evento["fecha"],evento["hora_inicio"],evento["hora_fin"],ahora) else None,
         "borrar":url_for("borrar_evento_propio",evento_id=evento["agenda_id"]) if tipo=="personal" else None,
     }
 
@@ -870,6 +970,65 @@ def abandonar_juntada(juntada_id):
     if not bajarse_de_juntada(juntada_id, session["usuarioID"], datetime.now()):
         return "No te podés dar de baja de esta juntada.", 400
     return volver_al_calendario()
+
+@app.route("/juntada/<int:juntada_id>/checkin",methods=["GET"])
+@login_requerido
+def mostrar_checkin(juntada_id):
+    usuario_id=session["usuarioID"]
+    juntada=obtener_por_id(juntada_id)
+    if juntada is None:
+        return "No encontramos esa juntada.",404
+    organiza=juntada.organizador_id==usuario_id
+    invitado=any(invitado_id==usuario_id and estado!="No" for _,invitado_id,_,estado in obtener_invitados_de_juntadas([juntada_id]))
+    if not organiza and not invitado:
+        return "No estás en la lista de esta juntada.",403
+    return render_template(
+        "checkin.html",juntada=juntada,organiza=organiza,
+        abierto=se_puede_hacer_checkin(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,datetime.now()),
+        ya_hizo=juntada_id in juntadas_con_asistencia(usuario_id,[juntada_id]),
+        cuando=f"{nombre_del_dia(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}",
+        presentes=[nombre for presente_id,nombre in presentes(juntada_id) if presente_id!=usuario_id],
+    )
+
+def posicion_del_pedido(datos):
+    return Posicion(datos.get("latitud"),datos.get("longitud"),datos.get("precision"))
+
+@app.route("/juntada/<int:juntada_id>/qr",methods=["POST"])
+@login_requerido
+def codigo_de_checkin(juntada_id):
+    usuario_id=session["usuarioID"]
+    juntada=obtener_por_id(juntada_id)
+    ahora=datetime.now()
+    if juntada is None or juntada.organizador_id!=usuario_id:
+        return {"error":"Solo quien organiza puede mostrar el QR"},403
+    if not se_puede_hacer_checkin(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora):
+        return {"error":"El check-in solo se puede hacer durante la juntada"},400
+    try:
+        posicion=posicion_del_pedido(request.get_json(silent=True) or {})
+    except ValueError as error:
+        return {"error":str(error)},400
+    return {
+        "codigo":generar_codigo(app.config["SECRET_KEY"],juntada_id,posicion,ahora),
+        "segundos":SEGUNDOS_POR_CODIGO,
+        "presentes":[nombre for presente_id,nombre in presentes(juntada_id) if presente_id!=usuario_id],
+    }
+
+@app.route("/checkin",methods=["POST"])
+@login_requerido
+def hacer_checkin():
+    usuario_id=session["usuarioID"]
+    datos=request.get_json(silent=True) or {}
+    ahora=datetime.now()
+    try:
+        juntada_id,posicion_organizador=leer_codigo(app.config["SECRET_KEY"],datos.get("codigo"),ahora)
+        posicion=posicion_del_pedido(datos)
+        if not posicion.esta_cerca_de(posicion_organizador):
+            raise ValueError("Parece que no estás en el mismo lugar que quien organiza. Acercate y probá de nuevo")
+        titulo=registrar_checkin(juntada_id,usuario_id,ahora)
+    except ValueError as error:
+        return {"error":str(error)},400
+    logros=logros_de([usuario_id])[usuario_id]
+    return {"mensaje":f"¡Listo! Estás en «{titulo}»","racha":logros.racha_actual,"perfil":url_for("mostrar_perfil")}
 
 @app.route("/juntada/<int:juntadaID>/comentar",methods=["POST"])
 @login_requerido

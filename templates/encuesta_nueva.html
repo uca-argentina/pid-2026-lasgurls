@@ -43,11 +43,13 @@
     <div class="seccion seccion-formulario">
       <h3 class="titulo-seccion">¿Con quién?</h3>
       <ul class="lista" data-requiere-uno="Elegí al menos un amigo para invitar.">
+        {% from "_avatar.html" import avatar %}
+        {% set estilos = estilos_de_usuarios(amigos|map(attribute="id")|list) %}
         {% for amigo in amigos %}
         <li class="fila">
           <label class="fila-seleccionable">
             <input type="checkbox" name="invitados" value="{{ amigo.id }}"{% if amigo.id in seleccionados %} checked{% endif %}>
-            <span class="avatar avatar-chico">{{ amigo.nombre|iniciales }}</span>
+            {{ avatar(amigo.nombre|iniciales, estilos[amigo.id], "avatar-chico") }}
             <span class="fila-info">
               <span class="fila-nombre">{{ amigo.nombre }}</span>
               <span class="fila-detalle">{{ amigo.email }}</span>

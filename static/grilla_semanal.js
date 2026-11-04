@@ -89,7 +89,8 @@ window.GrillaSemanal = (function () {
       if (bloque.avatares && bloque.avatares.length) {
         var avatares = crear("span", "grilla-avatares");
         bloque.avatares.forEach(function (avatar) {
-          avatares.appendChild(crear("span", "grilla-avatar", avatar));
+          if (typeof avatar === "string") avatares.appendChild(crear("span", "grilla-avatar", avatar));
+          else avatares.appendChild(Avatar.crear(avatar.texto, avatar.estilo, "grilla-avatar"));
         });
         elemento.appendChild(avatares);
       }

@@ -1,3 +1,5 @@
+{% from "_avatar.html" import avatar, nombre %}
+{% set mi_estilo = estilo_actual() %}
 <header class="header">
   <div class="header-contenido">
     <a href="{{ url_for('mostrar_inicio') }}" class="header-marca" aria-label="JuntApp, ir al inicio">
@@ -20,11 +22,12 @@
 
       <details class="desplegable">
         <summary class="boton-avatar" aria-label="Menú de usuario">
-          <span class="avatar">{{ usuario_actual.nombre|iniciales }}</span>
+          {{ avatar(usuario_actual.nombre|iniciales, mi_estilo) }}
         </summary>
         <div class="panel panel-usuario">
           <div class="panel-usuario-info">
-            <strong>{{ usuario_actual.nombre }}</strong>
+            <strong>{{ nombre(usuario_actual.nombre, mi_estilo) }}</strong>
+            {% if mi_estilo.titulo %}<span class="titulo-perfil">{{ mi_estilo.titulo }}</span>{% endif %}
             <span>{{ usuario_actual.email }}</span>
           </div>
           <a href="{{ url_for('mostrar_perfil') }}" class="panel-opcion">Mi perfil</a>

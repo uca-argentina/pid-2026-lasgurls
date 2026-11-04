@@ -3,6 +3,7 @@
 {% block titulo %}Inicio{% endblock %}
 
 {% block contenido %}
+{% from "_avatar.html" import avatar %}
 <div class="inicio" data-en-vivo="inicio">
   <div class="inicio-encabezado">
     <div>
@@ -15,6 +16,19 @@
       <a href="{{ url_for('mostrar_nueva_agenda') }}" class="boton-neutro">Nuevo evento</a>
     </div>
   </div>
+
+  {% for checkin in checkins %}
+  <a class="checkin-aviso" href="{{ checkin.url }}">
+    <span class="checkin-aviso-icono" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 8h3v3H8zM13 13h3v3h-3zM13 8h3M8 13v3"/></svg>
+    </span>
+    <span class="checkin-aviso-texto">
+      <strong>{{ checkin.titulo }} {% if checkin.empezo %}está pasando ahora{% else %}empieza a las {{ checkin.hora }}{% endif %}</strong>
+      <span>{% if checkin.organiza %}Mostrá el QR para que los demás hagan check-in{% else %}Hacé check-in para sumar a tu racha{% endif %}</span>
+    </span>
+    <span class="checkin-aviso-boton">{% if checkin.organiza %}Mostrar QR{% else %}Check-in{% endif %}</span>
+  </a>
+  {% endfor %}
 
   <div class="inicio-columnas">
     <section class="inicio-tarjeta">
@@ -65,7 +79,7 @@
             {% if evento.van %}
             <span class="inicio-avatares" title="{{ evento.van|map(attribute='nombre')|join(', ') }}">
               {% for persona in evento.van[:3] %}
-              <span class="avatar avatar-chico">{{ persona.iniciales }}</span>
+              {{ avatar(persona.iniciales, persona.estilo, "avatar-chico") }}
               {% endfor %}
               {% if evento.van|length > 3 %}<span class="avatar avatar-chico inicio-avatar-mas">+{{ evento.van|length - 3 }}</span>{% endif %}
             </span>

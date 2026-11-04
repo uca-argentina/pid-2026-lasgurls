@@ -38,8 +38,8 @@
 
   function avataresDelBloque(personas) {
     var visibles = personas.filter(function (persona) { return persona.estado !== "No"; });
-    var avatares = visibles.slice(0, MAXIMO_AVATARES).map(function (persona) { return persona.iniciales; });
-    if (visibles.length > MAXIMO_AVATARES) avatares.push("+" + (visibles.length - MAXIMO_AVATARES));
+    var avatares = visibles.slice(0, MAXIMO_AVATARES).map(function (persona) { return { texto: persona.iniciales, estilo: persona.estilo }; });
+    if (visibles.length > MAXIMO_AVATARES) avatares.push({ texto: "+" + (visibles.length - MAXIMO_AVATARES) });
     return avatares;
   }
 
@@ -53,9 +53,11 @@
     var lista = crear("ul");
     personas.forEach(function (persona) {
       var item = crear("li", persona.estado === "No" ? "detalle-persona-no-va" : "");
+      var nombre = crear("span", "detalle-persona-nombre");
+      nombre.appendChild(Avatar.nombre(persona.nombre, persona.estilo));
       item.append(
-        crear("span", "avatar avatar-chico", persona.iniciales),
-        crear("span", "detalle-persona-nombre", persona.nombre),
+        Avatar.crear(persona.iniciales, persona.estilo, "avatar-chico"),
+        nombre,
         etiquetaDeRespuesta(persona.estado)
       );
       lista.appendChild(item);
@@ -384,7 +386,7 @@
         var item=crear("li");
         var cuerpo=crear("div","detalle-comentario");
         cuerpo.append(crear("span","detalle-comentario-autor",comentario.nombre+" · "+comentario.cuando),crear("span","",comentario.texto));
-        item.append(crear("span","avatar avatar-chico",comentario.iniciales),cuerpo);
+        item.append(Avatar.crear(comentario.iniciales,comentario.estilo,"avatar-chico"),cuerpo);
         lista.appendChild(item);
       });
       seccion.appendChild(lista);
@@ -659,6 +661,15 @@
     arriba.appendChild(cruzCerrar());
 
     var contenido = [arriba, tipo, crear("h3", "", evento.titulo), crear("p", "detalle-cuando", evento.cuando), crear("p", "", evento.detalle)];
+    if (evento.asistio) {
+      var hecho = crear("p", "detalle-checkin-hecho", "Esta juntada ya cuenta para tu racha");
+      hecho.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>');
+      contenido.push(hecho);
+    } else if (evento.checkin) {
+      var checkin = crear("a", "boton-principal detalle-checkin", evento.tipo === "organizo" ? "Mostrar QR de check-in" : "Hacer check-in");
+      checkin.href = evento.checkin;
+      contenido.push(checkin);
+    }
     if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.cargarGasto)contenido.push(seccionDeGastos(evento));
