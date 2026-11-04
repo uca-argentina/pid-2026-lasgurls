@@ -2,6 +2,8 @@ from sqlalchemy import select, delete
 from base_datos.configuracion import Session
 from base_datos.gasto_tabla import GastoTabla
 from base_datos.gasto_partes_tabla import GastoPartesTabla
+from base_datos.pago_deuda_tabla import PagoDeudaTabla
+from dominio.saldos import calcularSaldos, simplificar
 from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
@@ -45,6 +47,7 @@ def borrarDeJuntada(sesion,juntadaID):
     gastosIDs=select(GastoTabla.id).where(GastoTabla.juntadaID==juntadaID)
     sesion.execute(delete(GastoPartesTabla).where(GastoPartesTabla.gastoID.in_(gastosIDs)))
     sesion.execute(delete(GastoTabla).where(GastoTabla.juntadaID==juntadaID))
+    sesion.execute(delete(PagoDeudaTabla).where(PagoDeudaTabla.juntadaID==juntadaID))
 
 def personasDeJuntadas(juntadasIDs):
     if not juntadasIDs:
@@ -99,3 +102,54 @@ def obtenerDeJuntadas(juntadasIDs):
         for parte,nombre in sesion.execute(consultaPartes).all():
             porID[parte.gastoID]["partes"].append({"usuarioID":parte.usuarioID,"nombre":nombre,"monto":parte.monto})
         return gastos
+    
+    
+def transferenciasPendientes(sesion,juntadaID):
+    gastos=[]
+    gastosFilas=sesion.scalars(select(GastoTabla).where(GastoTabla.juntadaID==juntadaID)).all()
+    for fila in gastosFilas:
+        partes=sesion.scalars(select(GastoPartesTabla).where(GastoPartesTabla.gastoID==fila.id)).all()
+        gastos.append({"pagadorID":fila.pagadorID,"monto":fila.monto,"partes":[{"usuarioID":parte.usuarioID,"monto":parte.monto} for parte in partes]})
+    pagos=[
+        {"deudorID":pago.deudorID,"acreedorID":pago.acreedorID,"monto":pago.monto}
+        for pago in sesion.scalars(select(PagoDeudaTabla).where(PagoDeudaTabla.juntadaID==juntadaID)).all()
+    ]
+    return simplificar(calcularSaldos(gastos,pagos))
+
+def saldosDeJuntadas(juntadasIDs):
+    """{juntadaID: {"pendientes":[...],"saldadas":[...]}}"""
+    if not juntadasIDs:
+        return {}
+    with Session() as sesion:
+        resultado={juntadaID:{"pendientes":[],"saldadas":[]} for juntadaID in juntadasIDs}
+        nombres=dict(sesion.execute(select(UsuarioTabla.id,UsuarioTabla.nombre)).all())
+        for juntadaID in juntadasIDs:
+            for deudorID,acreedorID,monto in transferenciasPendientes(sesion,juntadaID):
+                resultado[juntadaID]["pendientes"].append({
+                    "deudorID":deudorID,"deudor":nombres.get(deudorID,""),
+                    "acreedorID":acreedorID,"acreedor":nombres.get(acreedorID,""),"monto":monto,
+                })
+        consultaPagos=select(PagoDeudaTabla).where(PagoDeudaTabla.juntadaID.in_(juntadasIDs)).order_by(PagoDeudaTabla.fechaHora,PagoDeudaTabla.id)
+        for pago in sesion.scalars(consultaPagos).all():
+            resultado[pago.juntadaID]["saldadas"].append({
+                "deudorID":pago.deudorID,"deudor":nombres.get(pago.deudorID,""),
+                "acreedorID":pago.acreedorID,"acreedor":nombres.get(pago.acreedorID,""),
+                "monto":pago.monto,"fechaHora":pago.fechaHora,
+            })
+        return resultado
+
+def saldarDeuda(juntadaID,usuarioID,deudorID,acreedorID,monto,ahora):
+    """Devuelve None si se registró, o el motivo por el que no se pudo"""
+    with Session() as sesion:
+        if sesion.get(JuntadaTabla,juntadaID) is None:
+            return "La juntada no existe"
+        if usuarioID not in (deudorID,acreedorID):
+            return "Solo quienes forman parte de la deuda pueden marcarla como saldada"
+        if (deudorID,acreedorID,monto) not in transferenciasPendientes(sesion,juntadaID):
+            return "Esa deuda cambió o ya estaba saldada"
+        sesion.add(PagoDeudaTabla(
+            juntadaID=juntadaID,deudorID=deudorID,acreedorID=acreedorID,
+            registradoPorID=usuarioID,monto=monto,fechaHora=ahora
+        ))
+        sesion.commit()
+        return None

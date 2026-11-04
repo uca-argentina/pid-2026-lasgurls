@@ -7,7 +7,8 @@ from datetime import date, datetime, time, timedelta
 import calendar as modulo_calendario
 
 os.environ.setdefault("TZ","America/Argentina/Buenos_Aires")
-modulo_tiempo.tzset()
+if hasattr(modulo_tiempo,"tzset"):
+    modulo_tiempo.tzset()
 
 from flask import Flask, request, render_template, session, redirect, url_for, g, flash
 from dominio.usuario import Usuario
@@ -18,7 +19,7 @@ from dominio.agenda.agenda import Agenda
 from dominio.comentario import Comentario
 from dominio.grupo import Grupo
 from dominio.ubicacion import Ubicacion
-from dominio.gasto import Gasto
+from dominio.gasto import Gasto, leerMonto
 from dominio.encuesta import Encuesta, MINIMO_OPCIONES, MAXIMO_OPCIONES 
 import base_datos.encuesta_acciones as encuesta_acciones
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
@@ -43,7 +44,7 @@ from base_datos.juntada_acciones import (
 from base_datos.disponibilidad_amigo_acciones import obtener_disponibilidad
 from base_datos.notificacion_acciones import obtener_no_leidas, marcar_leidas, juntadas_reprogramadas
 from base_datos.comentario_acciones import guardar as guardarComentario, obtenerDeJuntadas as obtenerComentarios
-from base_datos.gasto_acciones import guardar as guardarGasto, borrar as borrarGasto, obtenerDeJuntadas as obtenerGastos, personasDeJuntadas
+from base_datos.gasto_acciones import guardar as guardarGasto, borrar as borrarGasto, obtenerDeJuntadas as obtenerGastos, personasDeJuntadas, saldosDeJuntadas, saldarDeuda as saldarDeudaEnBase
 from base_datos.grupo_acciones import guardar as guardarGrupo, borrar as borrarGrupo, obtenerDeUsuario as obtenerGrupos
 from base_datos.categoria_acciones import obtener_categorias, crear_categoria, borrar_categoria, puede_usar_categoria
 from dominio.categoria import Categoria, COLORES
@@ -600,6 +601,10 @@ def mostrar_calendario():
             "borrar":url_for("borrarGastoPropio",gastoID=gasto["id"]) if gasto["creadorID"]==usuario_id else None,
         })
     personasPorJuntada=personasDeJuntadas(juntadasIDs)
+    saldosPorJuntada=saldosDeJuntadas(juntadasIDs)
+    def nombreVisible(personaID,nombre):
+        return "Vos" if personaID==usuario_id else nombre
+    
     asistidas=juntadas_con_asistencia(usuario_id,juntadasIDs)
     for evento in eventos:
         inicio,fin=rango_del_evento(evento["fecha"],evento["hora_inicio"],evento["hora_fin"])
@@ -616,6 +621,24 @@ def mostrar_calendario():
                 "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
                 "lugar":datos_de_lugar(evento["ubicacion"]),
                 "gastos":gastosPorJuntada.get(evento["juntada_id"],[]),
+                                "saldos":[
+                    {
+                        "deudor":nombreVisible(saldo["deudorID"],saldo["deudor"]),
+                        "acreedor":nombreVisible(saldo["acreedorID"],saldo["acreedor"]),
+                        "monto":textoMonto(saldo["monto"]),
+                        "saldar":{"deudorID":saldo["deudorID"],"acreedorID":saldo["acreedorID"],"monto":str(saldo["monto"])} if usuario_id in (saldo["deudorID"],saldo["acreedorID"]) else None,
+                    }
+                    for saldo in saldosPorJuntada.get(evento["juntada_id"],{}).get("pendientes",[])
+                ],
+                "saldadas":[
+                    (
+                        f"Yo le pagué {textoMonto(pago['monto'])} a {pago['acreedor']}" if pago["deudorID"]==usuario_id
+                        else f"{pago['deudor']} me pagó {textoMonto(pago['monto'])}" if pago["acreedorID"]==usuario_id
+                        else f"{pago['deudor']} le pagó {textoMonto(pago['monto'])} a {pago['acreedor']}"
+                    )
+                    for pago in saldosPorJuntada.get(evento["juntada_id"],{}).get("saldadas",[])
+                ],
+                "saldar":url_for("saldarDeuda",juntadaID=evento["juntada_id"]) if evento["juntada_id"] else None,
                 "personasGasto":[{"id":p["id"],"nombre":"Vos" if p["id"]==usuario_id else p["nombre"]} for p in personasPorJuntada.get(evento["juntada_id"],[])],
                 "asistio":evento["juntada_id"] in asistidas,
                 **acciones_del_evento(evento,ahora),
@@ -1070,6 +1093,21 @@ def cargarGasto(juntadaID):
     if guardarGasto(gasto,datetime.now()) is None:
         return volverAlGasto(juntadaID,"Solo los que participan de la juntada pueden estar en un gasto")
     return volverAlGasto(juntadaID)
+
+@app.route("/juntada/<int:juntadaID>/saldar",methods=["POST"])
+@login_requerido
+def saldarDeuda(juntadaID):
+    try:
+        monto=leerMonto(request.form.get("monto",""))
+    except ValueError as error:
+        return volverAlGasto(juntadaID,str(error))
+    motivo=saldarDeudaEnBase(
+        juntadaID,session["usuarioID"],
+        request.form.get("deudorID",type=int),request.form.get("acreedorID",type=int),
+        monto,datetime.now()
+    )
+    return volverAlGasto(juntadaID,motivo)
+
 
 @app.route("/gasto/<int:gastoID>/borrar",methods=["POST"])
 @login_requerido

@@ -12,6 +12,7 @@ from base_datos.notificacion_tabla import NotificacionTabla
 from base_datos.encuesta_tabla import EncuestaTabla, EncuestaOpcionTabla, EncuestaInvitadoTabla, EncuestaVotoTabla, EncuestaOcultaTabla
 from base_datos.gasto_tabla import GastoTabla
 from base_datos.gasto_partes_tabla import GastoPartesTabla
+from base_datos.pago_deuda_tabla import PagoDeudaTabla
 from base_datos.asistencia_tabla import AsistenciaTabla
 from base_datos.estilo_perfil_tabla import EstiloPerfilTabla
 

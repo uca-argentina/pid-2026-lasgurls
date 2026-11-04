@@ -600,6 +600,43 @@
     return seccion;
   }
 
+    function seccionDeSaldos(evento){
+    var seccion=crear("div","detalle-personas detalle-saldos");
+    seccion.appendChild(crear("p","detalle-personas-titulo","Quien le debe a quien"));
+    if(evento.saldos.length){
+      var lista=crear("ul");
+      evento.saldos.forEach(function(saldo){
+        var item=crear("li");
+        var cuerpo=crear("div","detalle-gasto");
+                var frase=saldo.deudor==="Vos"
+          ?"Yo le debo a "+saldo.acreedor
+          :saldo.acreedor==="Vos"
+            ?saldo.deudor+" me debe"
+            :saldo.deudor+" le debe a "+saldo.acreedor;
+        var arriba=crear("div","detalle-gasto-arriba");
+        arriba.append(crear("span","",frase),crear("strong","detalle-gasto-monto",saldo.monto));
+        cuerpo.appendChild(arriba);
+        item.appendChild(cuerpo);
+        if(saldo.saldar){
+          var saldar=formularioPost(evento.saldar,Object.assign({juntada:evento.juntadaID},saldo.saldar),"Marcar como saldada","boton-texto");
+          saldar.className="detalle-gasto-borrar";
+          item.appendChild(saldar);
+        }
+        lista.appendChild(item);
+      });
+      seccion.appendChild(lista);
+    }else{
+      seccion.appendChild(crear("p","detalle-sin-comentarios",evento.gastos.length?"Estan todos a mano":"Cuando haya gastos vas a ver aca quien le debe a quien"));
+    }
+    if(evento.saldadas.length){
+      seccion.appendChild(crear("p","detalle-saldos-titulo","Ya saldadas"));
+      var saldadas=crear("ul","detalle-saldadas");
+      evento.saldadas.forEach(function(texto){saldadas.appendChild(crear("li","",texto));});
+      seccion.appendChild(saldadas);
+    }
+    return seccion;
+  }
+
   function abrirJuntadaPedida(){
     var url=new URL(window.location.href);
     var juntadaID=Number(url.searchParams.get("juntada"));
@@ -672,7 +709,7 @@
     }
     if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
-    if(evento.cargarGasto)contenido.push(seccionDeGastos(evento));
+    if(evento.cargarGasto)contenido.push(seccionDeGastos(evento),seccionDeSaldos(evento));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));
     if(acciones.children.length)contenido.push(acciones);
     dialogo.replaceChildren.apply(dialogo, contenido);

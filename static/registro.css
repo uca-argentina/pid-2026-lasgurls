@@ -901,11 +901,25 @@ strong.grilla-linea {
 }
 
 .detalle-personas + .detalle-gastos,
+.detalle-gastos + .detalle-saldos,
+.detalle-saldos + .detalle-comentarios,
 .detalle-gastos + .detalle-comentarios {
   margin-top: 18px;
 }
 
-.detalle-gastos li {
+.detalle-saldos-titulo {
+  margin: 12px 0 4px;
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+}
+
+.detalle-saldadas li {
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+}
+
+.detalle-gastos li,
+.detalle-saldos li {
   align-items: flex-start;
   justify-content: space-between;
 }
