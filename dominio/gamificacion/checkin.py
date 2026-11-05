@@ -7,6 +7,7 @@ from dominio.modulo_utilidades.rango_horario import rango_del_evento
 SEGUNDOS_POR_CODIGO = 10
 CODIGOS_ACEPTADOS = 3
 ANTES_DEL_INICIO = timedelta(minutes=15)
+ANTES_PARA_HABILITAR = timedelta(hours=24)
 DESPUES_DEL_FIN = timedelta(minutes=60)
 DISTANCIA_MINIMA = 150
 DISTANCIA_MAXIMA = 500
@@ -50,6 +51,15 @@ def ventana_de_checkin(fecha, hora_inicio, hora_fin):
 def se_puede_hacer_checkin(fecha, hora_inicio, hora_fin, ahora):
     desde, hasta = ventana_de_checkin(fecha, hora_inicio, hora_fin)
     return desde <= ahora <= hasta
+
+
+def checkin_cerrado(fecha, hora_inicio, hora_fin, ahora):
+    return ahora > ventana_de_checkin(fecha, hora_inicio, hora_fin)[1]
+
+
+def se_puede_habilitar(fecha, hora_inicio, hora_fin, ahora):
+    inicio, _ = rango_del_evento(fecha, hora_inicio, hora_fin)
+    return inicio - ANTES_PARA_HABILITAR <= ahora and not checkin_cerrado(fecha, hora_inicio, hora_fin, ahora)
 
 
 def _turno(ahora):

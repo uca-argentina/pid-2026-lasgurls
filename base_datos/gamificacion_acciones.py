@@ -6,7 +6,7 @@ from base_datos.usuario_tabla import UsuarioTabla
 from base_datos.asistencia_tabla import AsistenciaTabla
 from base_datos.estilo_perfil_tabla import EstiloPerfilTabla
 from dominio.modulo_utilidades.rango_horario import rango_del_evento
-from dominio.gamificacion.checkin import se_puede_hacer_checkin
+from dominio.gamificacion.checkin import checkin_cerrado
 
 
 def _ya_asistio(sesion, juntada_id, usuario_id):
@@ -31,8 +31,8 @@ def registrar_checkin(juntada_id, usuario_id, ahora):
         invitacion = sesion.scalars(consulta).first()
         if invitacion is None or invitacion.estado == "No":
             raise ValueError("No estás en la lista de esta juntada")
-        if not se_puede_hacer_checkin(juntada.fecha, juntada.hora_inicio, juntada.hora_fin, ahora):
-            raise ValueError("El check-in solo se puede hacer durante la juntada")
+        if checkin_cerrado(juntada.fecha, juntada.hora_inicio, juntada.hora_fin, ahora):
+            raise ValueError("El check-in de esta juntada ya cerró")
         titulo = juntada.titulo
         if _ya_asistio(sesion, juntada_id, usuario_id):
             return titulo

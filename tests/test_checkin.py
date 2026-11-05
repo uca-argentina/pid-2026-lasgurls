@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, datetime, time, timedelta
-from dominio.gamificacion.checkin import Posicion, generar_codigo, leer_codigo, se_puede_hacer_checkin
+from dominio.gamificacion.checkin import Posicion, generar_codigo, leer_codigo, se_puede_hacer_checkin, se_puede_habilitar, checkin_cerrado
 
 SECRETO="secreto-de-prueba"
 OBELISCO=Posicion(-34.60373,-58.38157,20)
@@ -114,3 +114,19 @@ def test_elCheckinFuncionaEnJuntadasQuePasanLaMedianoche():
     fecha=date(2026,11,4)
 
     assert se_puede_hacer_checkin(fecha,time(23,0),time(2,0),datetime(2026,11,5,1,30))
+
+
+def test_elOrganizadorPuedeHabilitarElCheckinDesde24HorasAntes():
+    fecha=date(2026,11,5)
+
+    assert not se_puede_habilitar(fecha,time(21,0),time(23,0),datetime(2026,11,4,20,59))
+    assert se_puede_habilitar(fecha,time(21,0),time(23,0),datetime(2026,11,4,21,0))
+    assert se_puede_habilitar(fecha,time(21,0),time(23,0),datetime(2026,11,5,19,0))
+
+
+def test_despuesDelCierreNoSePuedeHabilitar():
+    fecha=date(2026,11,5)
+
+    assert not se_puede_habilitar(fecha,time(21,0),time(23,0),datetime(2026,11,6,0,1))
+    assert checkin_cerrado(fecha,time(21,0),time(23,0),datetime(2026,11,6,0,1))
+    assert not checkin_cerrado(fecha,time(21,0),time(23,0),datetime(2026,11,5,19,0))

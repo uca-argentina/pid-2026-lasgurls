@@ -672,6 +672,7 @@
 
   function mostrarDetalle(evento) {
     var dialogo = document.querySelector("[data-detalle-evento]");
+    dialogo.dataset.juntada = evento.juntadaID || "";
     var etiqueta = evento.tipo === "personal"
       ? evento.categoria || "Sin categoría"
       : ETIQUETAS[evento.tipo] + (evento.categoria ? " · " + evento.categoria : "");
@@ -724,7 +725,8 @@
       hecho.insertAdjacentHTML("afterbegin", '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>');
       contenido.push(hecho);
     } else if (evento.checkin) {
-      var checkin = crear("a", "boton-principal detalle-checkin", evento.tipo === "organizo" ? "Mostrar QR de check-in" : "Hacer check-in");
+      var textoCheckin = evento.tipo !== "organizo" ? "Hacer check-in" : evento.checkinAnticipado ? "Habilitar check-in" : "Mostrar QR de check-in";
+      var checkin = crear("a", (evento.checkinAnticipado ? "boton-neutro" : "boton-principal") + " detalle-checkin", textoCheckin);
       checkin.href = evento.checkin;
       contenido.push(checkin);
     }
@@ -877,14 +879,39 @@
     if (datos) dibujar(false);
   }, 60000);
 
+  function detalleAbierto() {
+    var dialogo = document.querySelector("[data-detalle-evento]");
+    return dialogo && dialogo.open ? dialogo : null;
+  }
+
+  function estaOcupado(dialogo) {
+    if (dialogo.classList.contains("dialogo-cargando")) return true;
+    if (dialogo.querySelector(".formulario-gasto:not([hidden])")) return true;
+    if (dialogo.querySelector(".dialogo-menu ul:not([hidden])")) return true;
+    if (dialogo.querySelector(".detalle-aviso:not(.detalle-aviso-en-lugar)") && dialogo.querySelector(".boton-peligro")) return true;
+    var comentario = dialogo.querySelector(".detalle-comentar input[name=texto]");
+    return Boolean(comentario && comentario.value.trim());
+  }
+
+  function sePuedeActualizar() {
+    if (!datos || document.hidden) return false;
+    var dialogo = detalleAbierto();
+    if (!dialogo) return !document.querySelector("dialog[open]");
+    return Boolean(dialogo.dataset.juntada) && !estaOcupado(dialogo);
+  }
+
+  var actualizando = false;
+
   function actualizarDatos() {
-    if (!datos || document.hidden || document.querySelector("dialog[open]")) return;
+    if (actualizando || !sePuedeActualizar()) return;
+    actualizando = true;
     fetch(window.location.href)
       .then(function (respuesta) {
         return respuesta.ok && !respuesta.redirected ? respuesta.text() : null;
       })
       .then(function (html) {
-        if (html === null || !datos || document.querySelector("dialog[open]")) return;
+        actualizando = false;
+        if (html === null || !sePuedeActualizar()) return;
         var nueva = new DOMParser().parseFromString(html, "text/html").querySelector("[data-datos-calendario]");
         var actual = document.querySelector("[data-datos-calendario]");
         if (!nueva || !actual || nueva.textContent === actual.textContent) return;
@@ -893,11 +920,27 @@
         leerDatos();
         datos.fecha = fecha;
         dibujar(false);
+        var dialogo = detalleAbierto();
+        if (!dialogo) return;
+        var juntadaID = Number(dialogo.dataset.juntada);
+        var evento = datos.eventos.find(function (item) { return item.juntadaID === juntadaID; });
+        if (!evento) {
+          dialogo.close();
+          return;
+        }
+        var scroll = dialogo.scrollTop;
+        mostrarDetalle(evento);
+        dialogo.scrollTop = scroll;
       })
-      .catch(function () {});
+      .catch(function () {
+        actualizando = false;
+      });
   }
 
   setInterval(actualizarDatos, 15000);
+  setInterval(function () {
+    if (detalleAbierto()) actualizarDatos();
+  }, 4000);
   document.addEventListener("visibilitychange", actualizarDatos);
 
   if (leerDatos()) dibujar(true);

@@ -14,12 +14,15 @@
   </div>
 
   {% if not abierto %}
-  <p class="checkin-explicacion">El check-in se abre 15 minutos antes de que empiece la juntada y se cierra una hora después de que termina.</p>
+  <p class="checkin-explicacion">{% if cerrado %}El check-in de esta juntada ya cerró: se cierra una hora después de que termina.{% else %}Quien organiza puede habilitar el check-in desde 24 horas antes de que empiece la juntada.{% endif %}</p>
   <a href="{{ url_for('mostrar_calendario', fecha=juntada.fecha.isoformat(), juntada=juntada.id) }}" class="boton-neutro">Volver a la juntada</a>
 
   {% elif organiza %}
+  {% if anticipado %}
+  <p class="checkin-anticipado">La juntada todavía no empezó. Si alguien ya llegó, podés habilitar el check-in ahora.</p>
+  {% endif %}
   <p class="checkin-explicacion">Mostrales este QR a los que vinieron. Cambia cada 10 segundos y lleva tu ubicación, así que no sirve mandarle una foto a alguien que no está.</p>
-  <button type="button" class="boton-principal checkin-empezar" data-empezar>Mostrar QR</button>
+  <button type="button" class="boton-principal checkin-empezar" data-empezar>{% if anticipado %}Habilitar check-in ahora{% else %}Mostrar QR{% endif %}</button>
   <div class="checkin-qr" data-qr hidden>
     <div class="checkin-qr-imagen" data-qr-imagen></div>
     <span class="checkin-qr-tiempo" data-qr-tiempo></span>
@@ -40,6 +43,9 @@
   </div>
 
   {% else %}
+  {% if anticipado %}
+  <p class="checkin-anticipado">La juntada todavía no empezó. Si quien organiza ya habilitó el check-in, escaneá su QR.</p>
+  {% endif %}
   <p class="checkin-explicacion">Escaneá el QR que muestra quien organiza. Te vamos a pedir la ubicación para chequear que estén en el mismo lugar.</p>
   <button type="button" class="boton-principal checkin-empezar" data-empezar>Escanear QR</button>
   <div class="checkin-lector" id="lector-qr" data-lector hidden></div>

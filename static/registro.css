@@ -4091,3 +4091,11 @@ strong.grilla-linea {
   font-size: 0.75rem;
   font-weight: 600;
 }
+
+.checkin-anticipado {
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  background: #f8eecb;
+  color: #6f5510;
+  font-size: 0.88rem;
+}

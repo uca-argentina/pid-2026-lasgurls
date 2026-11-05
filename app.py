@@ -50,7 +50,7 @@ from base_datos.categoria_acciones import obtener_categorias, crear_categoria, b
 from dominio.categoria import Categoria, COLORES
 from dominio.modulo_utilidades.rango_horario import rango_del_evento, termina_al_dia_siguiente, ya_empezo
 from dominio.disponibilidad.buscador_huecos import buscar_huecos, huecos_del_dia, proxima_media_hora
-from dominio.gamificacion.checkin import Posicion, generar_codigo, leer_codigo, se_puede_hacer_checkin, SEGUNDOS_POR_CODIGO
+from dominio.gamificacion.checkin import Posicion, generar_codigo, leer_codigo, se_puede_hacer_checkin, se_puede_habilitar, checkin_cerrado, SEGUNDOS_POR_CODIGO
 from dominio.gamificacion.logros import Logros, Estilo, resumen_del_mes, COLORES_AVATAR, FORMAS, MARCOS, TITULOS
 from base_datos.gamificacion_acciones import registrar_checkin, presentes, juntadas_con_asistencia, historiales, estilos_de, guardar_estilo
 
@@ -690,7 +690,8 @@ def acciones_del_evento(evento,ahora):
         "abandonar":url_for("abandonar_juntada",juntada_id=juntada_id) if tipo=="confirmada" and todavia_no_empezo else None,
         "comentar":url_for("comentarJuntada",juntadaID=juntada_id) if juntada_id else None,
         "cargarGasto":url_for("cargarGasto",juntadaID=juntada_id) if juntada_id else None,
-        "checkin":url_for("mostrar_checkin",juntada_id=juntada_id) if juntada_id and se_puede_hacer_checkin(evento["fecha"],evento["hora_inicio"],evento["hora_fin"],ahora) else None,
+        "checkin":url_for("mostrar_checkin",juntada_id=juntada_id) if juntada_id and se_puede_habilitar(evento["fecha"],evento["hora_inicio"],evento["hora_fin"],ahora) else None,
+        "checkinAnticipado":bool(juntada_id) and not se_puede_hacer_checkin(evento["fecha"],evento["hora_inicio"],evento["hora_fin"],ahora),
         "borrar":url_for("borrar_evento_propio",evento_id=evento["agenda_id"]) if tipo=="personal" else None,
     }
 
@@ -1005,9 +1006,12 @@ def mostrar_checkin(juntada_id):
     invitado=any(invitado_id==usuario_id and estado!="No" for _,invitado_id,_,estado in obtener_invitados_de_juntadas([juntada_id]))
     if not organiza and not invitado:
         return "No estás en la lista de esta juntada.",403
+    ahora=datetime.now()
     return render_template(
         "checkin.html",juntada=juntada,organiza=organiza,
-        abierto=se_puede_hacer_checkin(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,datetime.now()),
+        abierto=se_puede_habilitar(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora) if organiza else not checkin_cerrado(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora),
+        anticipado=not se_puede_hacer_checkin(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora),
+        cerrado=checkin_cerrado(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora),
         ya_hizo=juntada_id in juntadas_con_asistencia(usuario_id,[juntada_id]),
         cuando=f"{nombre_del_dia(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}",
         presentes=[nombre for presente_id,nombre in presentes(juntada_id) if presente_id!=usuario_id],
@@ -1024,8 +1028,8 @@ def codigo_de_checkin(juntada_id):
     ahora=datetime.now()
     if juntada is None or juntada.organizador_id!=usuario_id:
         return {"error":"Solo quien organiza puede mostrar el QR"},403
-    if not se_puede_hacer_checkin(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora):
-        return {"error":"El check-in solo se puede hacer durante la juntada"},400
+    if not se_puede_habilitar(juntada.fecha,juntada.hora_inicio,juntada.hora_fin,ahora):
+        return {"error":"El check-in de esta juntada no está disponible ahora"},400
     try:
         posicion=posicion_del_pedido(request.get_json(silent=True) or {})
     except ValueError as error:
