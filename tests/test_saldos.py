@@ -1,5 +1,5 @@
 from decimal import Decimal
-from dominio.saldos import calcularSaldos, simplificar
+from dominio.saldos import calcularSaldos, simplificar, ajustarPagos
 from dominio.gasto import Gasto
 
 
@@ -53,3 +53,30 @@ def test_losCentavosCierranExactos():
 
     assert sum(saldos.values())==Decimal("0.00")
     assert sum(monto for _,_,monto in simplificar(saldos))==Decimal("666.66")
+
+def test_siSeBorraElGastoElPagoYaNoVale():
+    pagos=[{"deudorID":9,"acreedorID":8,"monto":Decimal("500.00")}]
+
+    assert ajustarPagos([],pagos)==[Decimal("0.00")]
+
+
+def test_losPagosQueSiguenSiendoDeudaSeMantienen():
+    gastos=[gastoDe(Gasto(1,8,8,"Pizza","3000",[8,9,55]))]
+    pagos=[{"deudorID":9,"acreedorID":8,"monto":Decimal("1000.00")}]
+
+    assert ajustarPagos(gastos,pagos)==[Decimal("1000.00")]
+
+
+def test_unPagoMasGrandeQueLaDeudaQueQuedaSeAchica():
+    gastos=[gastoDe(Gasto(1,8,8,"Coca","1000",[8,9]))]
+    pagos=[{"deudorID":9,"acreedorID":8,"monto":Decimal("1500.00")}]
+
+    assert ajustarPagos(gastos,pagos)==[Decimal("500.00")]
+
+
+def test_despuesDeAjustarNoQuedanDeudasAlReves():
+    gastos=[gastoDe(Gasto(1,8,8,"Coca","1000",[8,9]))]
+    pagos=[{"deudorID":9,"acreedorID":8,"monto":Decimal("500.00")},{"deudorID":9,"acreedorID":8,"monto":Decimal("500.00")}]
+    ajustados=[{**pago,"monto":monto} for pago,monto in zip(pagos,ajustarPagos(gastos,pagos))]
+
+    assert simplificar(calcularSaldos(gastos,ajustados))==[]

@@ -37,3 +37,14 @@ def simplificar(saldos):
         acreedores.sort(key=lambda x:(-x[1],x[0]))
         deudores.sort(key=lambda x:(-x[1],x[0]))
     return transferencias
+
+def ajustarPagos(gastos,pagos):
+    saldos=calcularSaldos(gastos)
+    ajustados=[]
+    for pago in pagos:
+        deudorID,acreedorID=pago["deudorID"],pago["acreedorID"]
+        monto=max(cero,min(pago["monto"],-saldos.get(deudorID,cero),saldos.get(acreedorID,cero)))
+        saldos[deudorID]=saldos.get(deudorID,cero)+monto
+        saldos[acreedorID]=saldos.get(acreedorID,cero)-monto
+        ajustados.append(monto)
+    return ajustados

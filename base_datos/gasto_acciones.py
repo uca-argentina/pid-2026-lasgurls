@@ -3,7 +3,7 @@ from base_datos.configuracion import Session
 from base_datos.gasto_tabla import GastoTabla
 from base_datos.gasto_partes_tabla import GastoPartesTabla
 from base_datos.pago_deuda_tabla import PagoDeudaTabla
-from dominio.saldos import calcularSaldos, simplificar
+from dominio.saldos import calcularSaldos, simplificar, ajustarPagos
 from base_datos.juntada_tabla import JuntadaTabla
 from base_datos.juntada_invitados_tabla import JuntadaInvitadosTabla
 from base_datos.usuario_tabla import UsuarioTabla
@@ -38,10 +38,22 @@ def borrar(gastoID,usuarioID):
         gasto=sesion.get(GastoTabla,gastoID)
         if gasto is None or gasto.creadorID!=usuarioID:
             return False
+        juntadaID=gasto.juntadaID
         sesion.execute(delete(GastoPartesTabla).where(GastoPartesTabla.gastoID==gastoID))
         sesion.delete(gasto)
+        sesion.flush()
+        ajustarPagosDeJuntada(sesion,juntadaID)
         sesion.commit()
         return True
+
+def ajustarPagosDeJuntada(sesion,juntadaID):
+    filas=sesion.scalars(select(PagoDeudaTabla).where(PagoDeudaTabla.juntadaID==juntadaID).order_by(PagoDeudaTabla.fechaHora,PagoDeudaTabla.id)).all()
+    pagos=[{"deudorID":fila.deudorID,"acreedorID":fila.acreedorID,"monto":fila.monto} for fila in filas]
+    for fila,monto in zip(filas,ajustarPagos(gastosDeJuntada(sesion,juntadaID),pagos)):
+        if monto==0:
+            sesion.delete(fila)
+        elif monto!=fila.monto:
+            fila.monto=monto
 
 def borrarDeJuntada(sesion,juntadaID):
     gastosIDs=select(GastoTabla.id).where(GastoTabla.juntadaID==juntadaID)
@@ -104,12 +116,16 @@ def obtenerDeJuntadas(juntadasIDs):
         return gastos
     
     
-def transferenciasPendientes(sesion,juntadaID):
+def gastosDeJuntada(sesion,juntadaID):
     gastos=[]
     gastosFilas=sesion.scalars(select(GastoTabla).where(GastoTabla.juntadaID==juntadaID)).all()
     for fila in gastosFilas:
         partes=sesion.scalars(select(GastoPartesTabla).where(GastoPartesTabla.gastoID==fila.id)).all()
         gastos.append({"pagadorID":fila.pagadorID,"monto":fila.monto,"partes":[{"usuarioID":parte.usuarioID,"monto":parte.monto} for parte in partes]})
+    return gastos
+
+def transferenciasPendientes(sesion,juntadaID):
+    gastos=gastosDeJuntada(sesion,juntadaID)
     pagos=[
         {"deudorID":pago.deudorID,"acreedorID":pago.acreedorID,"monto":pago.monto}
         for pago in sesion.scalars(select(PagoDeudaTabla).where(PagoDeudaTabla.juntadaID==juntadaID)).all()
