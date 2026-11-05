@@ -425,6 +425,9 @@
     return campo;
   }
 
+  var ICONO_TILDE='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  var ICONO_TACHO='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>';
+
   function formularioDeGasto(evento){
     var formulario=formularioPost(evento.cargarGasto,{},"Guardar gasto","boton-principal");
     formulario.className="formulario-gasto";
@@ -505,6 +508,7 @@
         }
       });
       var total=aCentavos(monto.value);
+      guardar.disabled=personalizado&&problemaDelGasto()!==null;
       cuenta.hidden=!personalizado||total===null||!elegidas;
       cuenta.classList.remove("gasto-cuenta-ok");
       if(cuenta.hidden)return;
@@ -565,16 +569,24 @@
     if(evento.gastos.length){
       var lista=crear("ul");
       evento.gastos.forEach(function(gasto){
-        var item=crear("li");
+        var item=crear("li","gasto-item");
         var cuerpo=crear("div","detalle-gasto");
         var arriba=crear("div","detalle-gasto-arriba");
-        arriba.append(crear("strong","",gasto.descripcion),crear("span","detalle-gasto-monto",gasto.monto));
-        var reparto=gasto.partes.map(function(parte){return parte.nombre+" "+parte.monto;}).join(", ");
-        cuerpo.append(arriba,crear("span","detalle-gasto-reparto","Pago "+gasto.pagador+" · "+reparto));
+        arriba.append(crear("strong","detalle-gasto-nombre",gasto.descripcion),crear("span","detalle-gasto-monto",gasto.monto));
+        var partes=crear("div","gasto-partes");
+        gasto.partes.forEach(function(parte){
+          var chip=crear("span","gasto-parte-chip",parte.nombre+" ");
+          chip.appendChild(crear("b","",parte.monto));
+          partes.appendChild(chip);
+        });
+        cuerpo.append(arriba,crear("span","detalle-gasto-reparto","Pagó "+gasto.pagador),partes);
         item.appendChild(cuerpo);
         if(gasto.borrar){
-          var borrar=formularioPost(gasto.borrar,{juntada:evento.juntadaID},"Borrar","boton-texto");
+          var borrar=formularioPost(gasto.borrar,{juntada:evento.juntadaID},"","boton-icono");
           borrar.className="detalle-gasto-borrar";
+          borrar.lastChild.innerHTML=ICONO_TACHO;
+          borrar.lastChild.setAttribute("aria-label","Borrar gasto "+gasto.descripcion);
+          borrar.lastChild.title="Borrar gasto";
           item.appendChild(borrar);
         }
         lista.appendChild(item);
@@ -600,38 +612,42 @@
     return seccion;
   }
 
-    function seccionDeSaldos(evento){
+  function seccionDeSaldos(evento){
     var seccion=crear("div","detalle-personas detalle-saldos");
-    seccion.appendChild(crear("p","detalle-personas-titulo","Quien le debe a quien"));
+    seccion.appendChild(crear("p","detalle-personas-titulo","Quién le debe a quién"));
     if(evento.saldos.length){
-      var lista=crear("ul");
+      var lista=crear("ul","saldos");
       evento.saldos.forEach(function(saldo){
-        var item=crear("li");
-        var cuerpo=crear("div","detalle-gasto");
-                var frase=saldo.deudor==="Vos"
-          ?"Yo le debo a "+saldo.acreedor
-          :saldo.acreedor==="Vos"
-            ?saldo.deudor+" me debe"
+        var tipo=saldo.deudor==="Vos"?"debes":saldo.acreedor==="Vos"?"te-deben":"otros";
+        var frase=tipo==="debes"
+          ?"Le debés a "+saldo.acreedor
+          :tipo==="te-deben"
+            ?saldo.deudor+" te debe"
             :saldo.deudor+" le debe a "+saldo.acreedor;
-        var arriba=crear("div","detalle-gasto-arriba");
-        arriba.append(crear("span","",frase),crear("strong","detalle-gasto-monto",saldo.monto));
-        cuerpo.appendChild(arriba);
-        item.appendChild(cuerpo);
+        var item=crear("li","saldo saldo-"+tipo);
+        var info=crear("div","saldo-info");
+        info.append(crear("span","saldo-frase",frase),crear("strong","saldo-monto",saldo.monto));
+        item.appendChild(info);
         if(saldo.saldar){
-          var saldar=formularioPost(evento.saldar,Object.assign({juntada:evento.juntadaID},saldo.saldar),"Marcar como saldada","boton-texto");
-          saldar.className="detalle-gasto-borrar";
+          var saldar=formularioPost(evento.saldar,Object.assign({juntada:evento.juntadaID},saldo.saldar),"Marcar como saldada","boton-saldar");
+          saldar.className="saldo-accion";
+          saldar.lastChild.insertAdjacentHTML("afterbegin",ICONO_TILDE);
           item.appendChild(saldar);
         }
         lista.appendChild(item);
       });
       seccion.appendChild(lista);
     }else{
-      seccion.appendChild(crear("p","detalle-sin-comentarios",evento.gastos.length?"Estan todos a mano":"Cuando haya gastos vas a ver aca quien le debe a quien"));
+      seccion.appendChild(crear("p","detalle-sin-comentarios",evento.gastos.length?"Están todos a mano.":"Cuando haya gastos vas a ver acá quién le debe a quién."));
     }
     if(evento.saldadas.length){
       seccion.appendChild(crear("p","detalle-saldos-titulo","Ya saldadas"));
       var saldadas=crear("ul","detalle-saldadas");
-      evento.saldadas.forEach(function(texto){saldadas.appendChild(crear("li","",texto));});
+      evento.saldadas.forEach(function(texto){
+        var item=crear("li","",texto);
+        item.insertAdjacentHTML("afterbegin",ICONO_TILDE);
+        saldadas.appendChild(item);
+      });
       seccion.appendChild(saldadas);
     }
     return seccion;

@@ -3866,3 +3866,167 @@ strong.grilla-linea {
     font-size: 0.7rem;
   }
 }
+
+.formulario-gasto > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.formulario-gasto > button:disabled:hover {
+  background: var(--color-salvia);
+  border-color: var(--color-salvia);
+}
+
+.detalle-gastos .gasto-item {
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.detalle-gastos .gasto-item:last-child {
+  border-bottom: 0;
+}
+
+.detalle-gasto-nombre {
+  font-size: 0.95rem;
+}
+
+.detalle-gasto-monto {
+  font-size: 0.95rem;
+}
+
+.gasto-partes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.gasto-parte-chip {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--color-fondo);
+  color: var(--color-texto-suave);
+  font-size: 0.72rem;
+}
+
+.gasto-parte-chip b {
+  color: var(--color-texto);
+  font-weight: 600;
+}
+
+.boton-icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.boton-icono:hover {
+  border-color: #f0cfcb;
+  background: var(--color-error-fondo);
+  color: var(--color-error);
+}
+
+.detalle-gasto-borrar button.boton-icono {
+  padding: 0;
+}
+
+.detalle-saldos .saldos {
+  gap: 8px;
+}
+
+.detalle-saldos .saldo {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--color-borde);
+  background: var(--color-fondo);
+}
+
+.saldo-te-deben {
+  border-left-color: var(--color-salvia);
+}
+
+.detalle-saldos .saldo-te-deben {
+  border-left-color: var(--color-salvia);
+  background: #eef3eb;
+}
+
+.detalle-saldos .saldo-debes {
+  border-left-color: #c46f4e;
+  background: #fbefe9;
+}
+
+.saldo-info {
+  display: flex;
+  flex: 1 1 160px;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.saldo-frase {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.saldo-monto {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.saldo-debes .saldo-monto {
+  color: #a4482a;
+}
+
+.saldo-te-deben .saldo-monto {
+  color: #4d6a43;
+}
+
+.boton-saldar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-salvia);
+  border-radius: 16px;
+  background: var(--color-tarjeta);
+  color: var(--color-salvia-oscuro);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.boton-saldar:hover {
+  background: var(--color-salvia);
+  color: #ffffff;
+}
+
+.detalle-saldadas li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.detalle-saldadas svg {
+  flex-shrink: 0;
+  color: var(--color-salvia-oscuro);
+}
+
+.detalle-saldos .detalle-saldadas li {
+  justify-content: flex-start;
+}

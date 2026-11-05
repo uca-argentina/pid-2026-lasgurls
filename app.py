@@ -632,7 +632,7 @@ def mostrar_calendario():
                 ],
                 "saldadas":[
                     (
-                        f"Yo le pagué {textoMonto(pago['monto'])} a {pago['acreedor']}" if pago["deudorID"]==usuario_id
+                        f"Le pagaste {textoMonto(pago['monto'])} a {pago['acreedor']}" if pago["deudorID"]==usuario_id
                         else f"{pago['deudor']} me pagó {textoMonto(pago['monto'])}" if pago["acreedorID"]==usuario_id
                         else f"{pago['deudor']} le pagó {textoMonto(pago['monto'])} a {pago['acreedor']}"
                     )

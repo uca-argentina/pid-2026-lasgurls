@@ -41,6 +41,7 @@
   });
 
   document.addEventListener("submit", function (evento) {
+    if (evento.defaultPrevented) return;
     var dialogo = evento.target.closest("dialog");
     if (dialogo) dialogo.close();
     if (evento.target.method === "dialog") return;
