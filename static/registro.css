@@ -4030,3 +4030,64 @@ strong.grilla-linea {
 .detalle-saldos .detalle-saldadas li {
   justify-content: flex-start;
 }
+
+.dialogo-cargando {
+  cursor: progress;
+}
+
+.dialogo-cargando::before {
+  content: "";
+  position: sticky;
+  top: -28px;
+  z-index: 2;
+  display: block;
+  height: 3px;
+  margin: -28px -28px 25px;
+  background: linear-gradient(90deg, transparent, var(--color-salvia) 40%, var(--color-salvia) 60%, transparent);
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+  animation: dialogo-barra 1s linear infinite;
+}
+
+@keyframes dialogo-barra {
+  from { background-position: -100% 0; }
+  to { background-position: 200% 0; }
+}
+
+.dialogo-cargando > :not(.dialogo-arriba) {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.dialogo button.boton-cargando {
+  position: relative;
+  color: transparent;
+}
+
+.dialogo button.boton-cargando::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 14px;
+  height: 14px;
+  margin: auto;
+  border: 2px solid rgba(43, 43, 38, 0.2);
+  border-top-color: var(--color-salvia-oscuro);
+  border-radius: 50%;
+  animation: boton-girando 0.7s linear infinite;
+}
+
+@keyframes boton-girando {
+  to { transform: rotate(360deg); }
+}
+
+.dialogo .detalle-aviso-en-lugar {
+  margin: 0 0 14px;
+}
+
+.dialogo .detalle-saldos-titulo {
+  margin: 14px 0 6px;
+  color: var(--color-texto-suave);
+  font-size: 0.75rem;
+  font-weight: 600;
+}

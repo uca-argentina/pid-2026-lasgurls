@@ -394,6 +394,7 @@
       seccion.appendChild(crear("p","detalle-sin-comentarios","Todavia no hay comentarios"));
     }
     var formulario=formularioPost(evento.comentar,{},"Comentar","boton-neutro");
+    formulario.dataset.enLugar=evento.juntadaID;
     formulario.className="detalle-comentar";
     var campo=crear("input");
     campo.type="text";
@@ -430,6 +431,7 @@
 
   function formularioDeGasto(evento){
     var formulario=formularioPost(evento.cargarGasto,{},"Guardar gasto","boton-principal");
+    formulario.dataset.enLugar=evento.juntadaID;
     formulario.className="formulario-gasto";
     var guardar=formulario.lastChild;
 
@@ -542,6 +544,7 @@
       return null;
     }
 
+    formulario.tieneProblema=function(){return problemaDelGasto()!==null;};
     formulario.addEventListener("submit",function(eventoEnvio){
       var problema=problemaDelGasto();
       if(!problema)return;
@@ -584,6 +587,7 @@
         if(gasto.borrar){
           var borrar=formularioPost(gasto.borrar,{juntada:evento.juntadaID},"","boton-icono");
           borrar.className="detalle-gasto-borrar";
+          borrar.dataset.enLugar=evento.juntadaID;
           borrar.lastChild.innerHTML=ICONO_TACHO;
           borrar.lastChild.setAttribute("aria-label","Borrar gasto "+gasto.descripcion);
           borrar.lastChild.title="Borrar gasto";
@@ -631,6 +635,7 @@
         if(saldo.saldar){
           var saldar=formularioPost(evento.saldar,Object.assign({juntada:evento.juntadaID},saldo.saldar),"Marcar como saldada","boton-saldar");
           saldar.className="saldo-accion";
+          saldar.dataset.enLugar=evento.juntadaID;
           saldar.lastChild.insertAdjacentHTML("afterbegin",ICONO_TILDE);
           item.appendChild(saldar);
         }
@@ -733,6 +738,72 @@
     var listaComentarios=dialogo.querySelector(".detalle-comentarios ul");
     if(listaComentarios)listaComentarios.scrollTop=listaComentarios.scrollHeight;
   }
+
+  function mostrarError(dialogo,texto){
+    var aviso=dialogo.querySelector(".detalle-aviso-en-lugar")||crear("p","detalle-aviso detalle-aviso-en-lugar");
+    aviso.textContent=texto;
+    dialogo.querySelector(".dialogo-arriba").after(aviso);
+  }
+
+  function enviarEnLugar(formulario){
+    var dialogo=document.querySelector("[data-detalle-evento]");
+    var juntadaID=Number(formulario.dataset.enLugar);
+    var boton=formulario.querySelector("button");
+    var scroll=dialogo.scrollTop;
+    var cuerpo=new FormData(formulario);
+    dialogo.classList.add("dialogo-cargando");
+    dialogo.querySelectorAll("button").forEach(function(otro){otro.disabled=true;});
+    if(boton)boton.classList.add("boton-cargando");
+
+    function terminar(){
+      dialogo.classList.remove("dialogo-cargando");
+    }
+
+    fetch(formulario.action,{method:"POST",body:cuerpo})
+      .then(function(respuesta){
+        return respuesta.text().then(function(texto){return {respuesta:respuesta,texto:texto};});
+      })
+      .then(function(resultado){
+        terminar();
+        var nueva=resultado.respuesta.ok&&new DOMParser().parseFromString(resultado.texto,"text/html").querySelector("[data-datos-calendario]");
+        var actual=document.querySelector("[data-datos-calendario]");
+        if(!nueva||!actual){
+          var evento=datos.eventos.find(function(item){return item.juntadaID===juntadaID;});
+          if(evento)mostrarDetalle(evento);
+          mostrarError(dialogo,resultado.respuesta.ok?"Algo salió mal. Recargá la página.":resultado.texto);
+          return;
+        }
+        var fecha=datos.fecha;
+        actual.textContent=nueva.textContent;
+        leerDatos();
+        datos.fecha=fecha;
+        var error=new URL(resultado.respuesta.url).searchParams.get("errorGasto");
+        datos.errorGasto=error;
+        datos.errorGastoJuntada=juntadaID;
+        dibujar(false);
+        var actualizado=datos.eventos.find(function(item){return item.juntadaID===juntadaID;});
+        if(!actualizado){
+          dialogo.close();
+          return;
+        }
+        mostrarDetalle(actualizado);
+        dialogo.scrollTop=scroll;
+      })
+      .catch(function(){
+        terminar();
+        dialogo.querySelectorAll("button").forEach(function(otro){otro.disabled=false;});
+        if(boton)boton.classList.remove("boton-cargando");
+        mostrarError(dialogo,"No pudimos conectarnos. Revisá tu conexión y probá de nuevo.");
+      });
+  }
+
+  document.addEventListener("submit",function(evento){
+    var formulario=evento.target;
+    if(formulario.dataset.enLugar===undefined||!formulario.closest("[data-detalle-evento]"))return;
+    if(formulario.tieneProblema&&formulario.tieneProblema())return;
+    evento.preventDefault();
+    enviarEnLugar(formulario);
+  },true);
 
   function abrirCrear(inicio) {
     var dialogo = document.querySelector("[data-crear-en-horario]");
