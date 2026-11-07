@@ -130,6 +130,58 @@ Para probarla desde el celular en la misma red WiFi, entrar a `http://<IP de la 
 
 ---
 
+## Cómo correrlo sin internet (base local)
+
+En esta rama la app usa por defecto una base **SQLite local** (`juntapp.db`, en la raíz del proyecto), así que funciona sin WiFi y no necesita credenciales ni `ca.pem`. Las fuentes y las librerías del QR también están dentro de `static/`.
+
+Si no existe `juntapp.db`, la app la crea vacía al arrancar (con las tablas y las categorías de fábrica), así que alcanza con `python3 app.py` y registrarse. El paso 1 es opcional, para tener datos de ejemplo.
+
+### 1. Preparar la base local con datos de ejemplo (opcional)
+```bash
+source venv/bin/activate
+python3 -m base_datos.preparar_local
+```
+Borra y vuelve a crear `juntapp.db` con todas las tablas y datos de ejemplo:
+
+| Usuario | Email | Contraseña |
+|---|---|---|
+| Marina Mercadal | marina@juntapp.com | Juntapp1! |
+| Juana Pérez | juana@juntapp.com | Juntapp1! |
+| Pedro Gómez | pedro@juntapp.com | Juntapp1! |
+| Caro López | caro@juntapp.com | Juntapp1! |
+
+Incluye amistades, un grupo, tres juntadas pasadas con check-in (racha de 3), una juntada **que está pasando ahora** con gastos y comentarios, una invitación pendiente para mañana y un evento personal. Conviene correrlo justo antes de una demo, porque la juntada "de ahora" se crea a partir de la hora actual.
+
+### 2. Levantar la app
+```bash
+python3 app.py
+```
+Abrir **http://localhost:5001**.
+
+### Check-in sin internet
+- Sin red, el celular no puede conectarse a la compu, así que la demo se hace toda en la compu: el organizador en una ventana y el invitado en otra (otro perfil de Chrome o una ventana de incógnito).
+- En modo local, el organizador ve el **código del QR en texto** con un botón para copiarlo, y el invitado tiene un campo para **pegarlo**.
+- El invitado primero toca **Escanear QR** (o **Usar código**) para que el navegador le pida la ubicación, y después pega el código.
+- Si la compu no puede obtener la ubicación (sin WiFi no tiene cómo), se usa una ubicación simulada.
+- Para mostrar el rechazo por distancia: en Chrome, `Cmd + Option + I` → ⋮ → More tools → Sensors → Location → elegir una ciudad lejana (por ejemplo Tokyo) en una de las dos ventanas y recargar.
+
+### Volver a usar la base de Aiven
+```bash
+JUNTAPP_AIVEN=1 python3 app.py
+```
+
+### Instalar las dependencias en otra compu sin internet
+Con internet, antes:
+```bash
+pip download -r requirements.txt -d paquetes
+```
+Después, sin internet:
+```bash
+pip install --no-index --find-links paquetes -r requirements.txt
+```
+
+---
+
 ## Tests
 
 ```bash

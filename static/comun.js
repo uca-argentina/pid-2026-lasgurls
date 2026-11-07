@@ -50,6 +50,12 @@
     if (!evento.target.closest("[data-recargable]")) document.documentElement.classList.add("navegando");
   });
 
+  if (!navigator.onLine) {
+    document.querySelectorAll("[data-necesita-internet]").forEach(function (elemento) {
+      elemento.remove();
+    });
+  }
+
   var ultimasNotificaciones = null;
   var contenidoEnVivo = new WeakMap();
 

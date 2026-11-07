@@ -5,8 +5,8 @@
     </span>
     <span class="lugar-textos">
       <strong class="lugar-nombre">{{ lugar.texto }}</strong>
-      <a class="lugar-abrir" href="{{ lugar.mapa }}" target="_blank" rel="noopener">Abrir en Google Maps</a>
+      <a class="lugar-abrir" data-necesita-internet href="{{ lugar.mapa }}" target="_blank" rel="noopener">Abrir en Google Maps</a>
     </span>
   </div>
-  <iframe class="lugar-mapa" src="{{ lugar.embebido }}" title="Mapa de {{ lugar.texto }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  <iframe class="lugar-mapa" data-necesita-internet src="{{ lugar.embebido }}" title="Mapa de {{ lugar.texto }}" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
 </div>

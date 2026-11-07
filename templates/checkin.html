@@ -4,7 +4,7 @@
 
 {% block contenido %}
 {% from "_iconos.html" import icono %}
-<div class="tarjeta-formulario checkin" data-checkin data-organiza="{{ '1' if organiza else '' }}"
+<div class="tarjeta-formulario checkin" data-checkin data-organiza="{{ '1' if organiza else '' }}" data-modo-local="{{ '1' if modo_local else '' }}"
      data-url-qr="{{ url_for('codigo_de_checkin', juntada_id=juntada.id) }}" data-url-checkin="{{ url_for('hacer_checkin') }}">
   <div class="encabezado-tarjeta">
     <div>
@@ -26,6 +26,13 @@
   <div class="checkin-qr" data-qr hidden>
     <div class="checkin-qr-imagen" data-qr-imagen></div>
     <span class="checkin-qr-tiempo" data-qr-tiempo></span>
+    {% if modo_local %}
+    <div class="checkin-codigo">
+      <span class="checkin-codigo-titulo">Modo local: código del QR</span>
+      <code data-qr-codigo></code>
+      <button type="button" class="boton-neutro boton-chico" data-copiar>Copiar código</button>
+    </div>
+    {% endif %}
   </div>
   <p class="checkin-estado" data-estado role="status"></p>
   <div class="checkin-presentes">
@@ -49,6 +56,15 @@
   <p class="checkin-explicacion">Escaneá el QR que muestra quien organiza. Te vamos a pedir la ubicación para chequear que estén en el mismo lugar.</p>
   <button type="button" class="boton-principal checkin-empezar" data-empezar>Escanear QR</button>
   <div class="checkin-lector" id="lector-qr" data-lector hidden></div>
+  {% if modo_local %}
+  <form class="checkin-pegar" data-pegar>
+    <label for="codigo-manual">Modo local: pegá el código del QR</label>
+    <div class="checkin-pegar-fila">
+      <input id="codigo-manual" name="codigo" autocomplete="off" placeholder="JA1:…">
+      <button type="submit" class="boton-neutro">Usar código</button>
+    </div>
+  </form>
+  {% endif %}
   <p class="checkin-estado" data-estado role="status"></p>
   <div class="checkin-listo" data-listo hidden>
     <span class="checkin-listo-icono" aria-hidden="true">{{ icono("tilde", 28) }}</span>
@@ -62,9 +78,9 @@
 
 {% block scripts %}
 {% if abierto and organiza %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" defer></script>
+<script src="{{ url_for('static', filename='vendor/qrcode.min.js') }}" defer></script>
 {% elif abierto and not ya_hizo %}
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+<script src="{{ url_for('static', filename='vendor/html5-qrcode.min.js') }}" defer></script>
 {% endif %}
 <script src="{{ url_for('static', filename='checkin.js') }}" defer></script>
 {% endblock %}

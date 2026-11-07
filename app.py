@@ -25,6 +25,8 @@ import base_datos.encuesta_acciones as encuesta_acciones
 from base_datos.usuario_acciones import guardar, actualizar_perfil, dar_de_baja, actualizar_compartir_disponibilidad
 from base_datos.usuario_acciones import verificar_login, buscarPorID, obtenerTodos
 from base_datos.secretos import SECRET_KEY
+from base_datos.configuracion import USA_AIVEN
+from base_datos.preparar_local import asegurar_base_local
 from amistad_acciones import enviarSolicitud, aceptarSolicitud, rechazarSolicitud, eliminarAmigo
 from base_datos.solicitud_acciones import obtenerRecibidas, obtener_amigos
 from base_datos.agenda_acciones import obtener_por_usuario as obtener_agenda_de_usuario
@@ -67,6 +69,7 @@ DURACIONES_JUNTADA = [
 
 app= Flask(__name__)
 app.config["SECRET_KEY"]=SECRET_KEY
+asegurar_base_local()
 
 def login_requerido(vista):
     @wraps(vista)
@@ -1015,6 +1018,7 @@ def mostrar_checkin(juntada_id):
         ya_hizo=juntada_id in juntadas_con_asistencia(usuario_id,[juntada_id]),
         cuando=f"{nombre_del_dia(juntada.fecha)} · {texto_horario(juntada.fecha,juntada.hora_inicio,juntada.hora_fin)}",
         presentes=[nombre for presente_id,nombre in presentes(juntada_id) if presente_id!=usuario_id],
+        modo_local=not USA_AIVEN,
     )
 
 def posicion_del_pedido(datos):

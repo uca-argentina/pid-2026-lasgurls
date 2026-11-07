@@ -4099,3 +4099,44 @@ strong.grilla-linea {
   color: #6f5510;
   font-size: 0.88rem;
 }
+
+.checkin-codigo,
+.checkin-pegar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed var(--color-borde);
+  font-size: 0.8rem;
+}
+
+.checkin-codigo-titulo,
+.checkin-pegar label {
+  color: var(--color-texto-suave);
+  font-weight: 600;
+}
+
+.checkin-codigo code {
+  overflow-wrap: anywhere;
+  font-size: 0.72rem;
+}
+
+.checkin-codigo button {
+  align-self: flex-start;
+}
+
+.checkin-pegar-fila {
+  display: flex;
+  gap: 8px;
+}
+
+.checkin-pegar-fila input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-fondo);
+  font-family: inherit;
+}

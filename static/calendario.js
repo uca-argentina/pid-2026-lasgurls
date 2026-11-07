@@ -368,6 +368,11 @@
     enlace.rel="noopener";
     textos.append(crear("strong","lugar-nombre",lugar.texto),enlace);
     encabezado.append(iconoDeLugar(),textos);
+    if(!navigator.onLine){
+      enlace.hidden=true;
+      tarjeta.appendChild(encabezado);
+      return tarjeta;
+    }
     var mapa=crear("iframe","lugar-mapa");
     mapa.src=lugar.embebido;
     mapa.title="Mapa de "+lugar.texto;

@@ -226,3 +226,5 @@ __marimo__/
 #Base de datos
 ca.pem
 base_datos/credenciales.py
+#Base local del parcial
+juntapp.db

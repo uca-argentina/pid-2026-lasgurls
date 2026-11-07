@@ -8,4 +8,8 @@ if os.environ.get("DB_HOST"):
     BASE = os.environ["DB_BASE"]
     SECRET_KEY = os.environ["SECRET_KEY"]
 else:
-    from base_datos.credenciales import HOST, PUERTO, USUARIO, PASSWORD, BASE, SECRET_KEY
+    try:
+        from base_datos.credenciales import HOST, PUERTO, USUARIO, PASSWORD, BASE, SECRET_KEY
+    except ImportError:
+        HOST = PUERTO = USUARIO = PASSWORD = BASE = None
+        SECRET_KEY = os.environ.get("SECRET_KEY", "juntapp-clave-local")

@@ -3,6 +3,8 @@
   var empezar = pagina && pagina.querySelector("[data-empezar]");
   if (!empezar) return;
   var estado = pagina.querySelector("[data-estado]");
+  var modoLocal = Boolean(pagina.dataset.modoLocal);
+  var UBICACION_SIMULADA = { latitude: -34.60373, longitude: -58.38157, accuracy: 20 };
   var posicion = null;
 
   function avisar(texto, esError) {
@@ -20,6 +22,11 @@
         posicion = actual.coords;
         resolver(posicion);
       }, function (problema) {
+        if (modoLocal) {
+          posicion = UBICACION_SIMULADA;
+          resolver(posicion);
+          return;
+        }
         rechazar(new Error(problema.code === 1
           ? "Necesitamos tu ubicación para el check-in. Habilitala para JuntApp en la configuración del navegador y recargá la página."
           : "No pudimos obtener tu ubicación. Revisá que el GPS esté prendido y probá de nuevo."));
@@ -57,6 +64,14 @@
     var imagen = pagina.querySelector("[data-qr-imagen]");
     var tiempo = pagina.querySelector("[data-qr-tiempo]");
     var presentes = pagina.querySelector("[data-presentes]");
+    var textoCodigo = pagina.querySelector("[data-qr-codigo]");
+    var copiar = pagina.querySelector("[data-copiar]");
+    if (copiar) copiar.addEventListener("click", function () {
+      navigator.clipboard.writeText(textoCodigo.textContent).then(function () {
+        copiar.textContent = "¡Copiado!";
+        setTimeout(function () { copiar.textContent = "Copiar código"; }, 1500);
+      });
+    });
 
     function dibujarPresentes(nombres) {
       if (!nombres.length) {
@@ -75,6 +90,7 @@
           qr.addData(respuesta.codigo);
           qr.make();
           imagen.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true });
+          if (textoCodigo) textoCodigo.textContent = respuesta.codigo;
           tiempo.style.animationDuration = respuesta.segundos + "s";
           tiempo.classList.remove("checkin-qr-tiempo-corriendo");
           void tiempo.offsetWidth;
@@ -103,30 +119,39 @@
     return elemento;
   }
 
-  function escanear() {
-    var lector = pagina.querySelector("[data-lector]");
+  function mandarCodigo(codigo) {
     var listo = pagina.querySelector("[data-listo]");
-    var camara = new Html5Qrcode(lector.id);
-    var leyendo = false;
-
-    function alLeer(codigo) {
-      if (leyendo) return;
-      leyendo = true;
-      avisar("Chequeando…");
-      camara.stop().catch(function () {}).then(function () {
-        lector.hidden = true;
-        return enviar(pagina.dataset.urlCheckin, Object.assign({ codigo: codigo }, datosDeUbicacion()));
-      }).then(function (respuesta) {
+    var pegar = pagina.querySelector("[data-pegar]");
+    avisar("Chequeando…");
+    return enviar(pagina.dataset.urlCheckin, Object.assign({ codigo: codigo }, datosDeUbicacion()))
+      .then(function (respuesta) {
         avisar("");
         listo.querySelector("[data-listo-mensaje]").textContent = respuesta.mensaje;
         var racha = listo.querySelector("[data-listo-racha]");
         racha.textContent = "🔥 Racha de " + respuesta.racha;
         racha.hidden = respuesta.racha < 1;
         listo.hidden = false;
-      }).catch(function (problema) {
+        empezar.hidden = true;
+        if (pegar) pegar.hidden = true;
+      })
+      .catch(function (problema) {
         avisar(problema.message, true);
         empezar.textContent = "Probar de nuevo";
         empezar.hidden = false;
+      });
+  }
+
+  function escanear() {
+    var lector = pagina.querySelector("[data-lector]");
+    var camara = new Html5Qrcode(lector.id);
+    var leyendo = false;
+
+    function alLeer(codigo) {
+      if (leyendo) return;
+      leyendo = true;
+      camara.stop().catch(function () {}).then(function () {
+        lector.hidden = true;
+        mandarCodigo(codigo);
       });
     }
 
@@ -139,6 +164,16 @@
         empezar.hidden = false;
       });
   }
+
+  var pegar = pagina.querySelector("[data-pegar]");
+  if (pegar) pegar.addEventListener("submit", function (evento) {
+    evento.preventDefault();
+    var codigo = pegar.elements.codigo.value.trim();
+    if (!codigo) return;
+    (posicion ? Promise.resolve() : pedirUbicacion())
+      .then(function () { mandarCodigo(codigo); })
+      .catch(function (problema) { avisar(problema.message, true); });
+  });
 
   empezar.addEventListener("click", function () {
     empezar.hidden = true;
