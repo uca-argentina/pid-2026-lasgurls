@@ -379,6 +379,8 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "tipo":"personal","juntada_id":None,"agenda_id":agenda.id,"categoria":categoria,"color":color,
             "detalle":que_ven,
             "ubicacion":agenda.ubicacion,
+            
+        
         })
 
     organizadas={}
@@ -389,13 +391,28 @@ def eventos_del_usuario(usuario_id,desde,hasta):
 
     for juntada,invitados,categoria,color in organizadas.values():
         confirmados=sum(1 for _,estado,_ in invitados if estado=="Si")
-        eventos.append({
+        if(juntada.cupo==confirmados):
+            eventos.append({
             "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
             "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"serie_id":juntada.serie_id,"categoria":categoria,"color":color,
             "personas":[persona(g.usuario.nombre,"organiza",usuario_id,es_vos=True)]+[persona(nombre,estado,invitado_id) for nombre,estado,invitado_id in invitados],
             "ubicacion":juntada.ubicacion,
+            "cupo":"COMPLETO"
         })
+        else:
+            eventos.append({
+            "fecha":juntada.fecha,"titulo":juntada.titulo,"hora_inicio":juntada.hora_inicio,"hora_fin":juntada.hora_fin,
+            "tipo":"organizo","detalle":f"Organizás · {confirmados} de {len(invitados)} confirmaron"+texto_repeticion(juntada),
+            "juntada_id":juntada.id,"serie_id":juntada.serie_id,"categoria":categoria,"color":color,
+            "personas":[persona(g.usuario.nombre,"organiza",usuario_id,es_vos=True)]+[persona(nombre,estado,invitado_id) for nombre,estado,invitado_id in invitados],
+            "ubicacion":juntada.ubicacion,
+            "cupo":juntada.cupo
+        })
+
+        
+       
+        
 
     invitaciones=[
         fila for fila in invitaciones_del_usuario(desde,hasta) if desde<=fila[1].fecha<=hasta
@@ -413,6 +430,7 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(organizador,"organiza",juntada.organizador_id)]+invitados_por_juntada.get(juntada.id,[]),
             "ubicacion":juntada.ubicacion,
+            "cupo":juntada.cupo
         })
     agregar_estilos(eventos)
     return eventos
@@ -623,6 +641,7 @@ def mostrar_calendario():
                 "juntadaID":evento["juntada_id"],
                 "comentarios":comentariosPorJuntada.get(evento["juntada_id"],[]),
                 "lugar":datos_de_lugar(evento["ubicacion"]),
+                
                 "gastos":gastosPorJuntada.get(evento["juntada_id"],[]),
                                 "saldos":[
                     {
@@ -795,6 +814,7 @@ def crear_juntada():
     amigos=obtener_amigos(usuario_id)
     amigos_ids=[amigo.id for amigo in amigos]
     visibilidad = request.form.get("visibilidad", "ocupado")
+    
 
     if not set(invitados_ids).issubset(set(amigos_ids)):
         seleccionados=[id for id in invitados_ids if id in amigos_ids]
@@ -816,7 +836,7 @@ def crear_juntada():
             visibilidad=visibilidad,
             comparte_detalles=g.usuario.compartir_disponibilidad,
             recurrencia=recurrencia_del_formulario(datetime.strptime(fecha_parametro, "%Y-%m-%d").date()),
-            ubicacion=request.form.get("ubicacion",""),
+            ubicacion=request.form.get("ubicacion",""),cupo=request.form.get("cupo","")
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400

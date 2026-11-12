@@ -49,7 +49,7 @@
 
   function listaDePersonas(personas) {
     var seccion = crear("div", "detalle-personas");
-    seccion.appendChild(crear("p", "detalle-personas-titulo", "Quiénes van"));
+    seccion.appendChild(crear("p", "detalle-personas-titulo"));
     var lista = crear("ul");
     personas.forEach(function (persona) {
       var item = crear("li", persona.estado === "No" ? "detalle-persona-no-va" : "");
@@ -380,6 +380,10 @@
     mapa.referrerPolicy="no-referrer-when-downgrade";
     tarjeta.append(encabezado,mapa);
     return tarjeta;
+  }
+
+  function tarjetaDeCupo(evento){
+    return crear("div","detalle-personas-titulo","Cupo maximo: "+evento.cupo)
   }
 
   function seccionDeComentarios(evento){
@@ -736,6 +740,7 @@
       contenido.push(checkin);
     }
     if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
+    contenido.push(tarjetaDeCupo(evento));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.cargarGasto)contenido.push(seccionDeGastos(evento),seccionDeSaldos(evento));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));

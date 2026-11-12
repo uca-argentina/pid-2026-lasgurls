@@ -163,6 +163,7 @@ def obtener_detalle(encuesta_id, usuario_id):
                 "marcada": i in dominio.votos.get(usuario_id, set()),
                 "ganadora": i in ganadoras,
             } for i, opcion in enumerate(opciones)],
+            "cupo":opcion.cupo
         }
 
 
@@ -213,6 +214,7 @@ def _resumen(sesion, encuesta_id, usuario_id):
         ],
         "juntada": juntada,
         "juntada_id": fila.juntada_id,
+        "cupo":dominio.cupo
     }
 
 

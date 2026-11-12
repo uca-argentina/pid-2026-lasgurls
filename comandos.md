@@ -67,3 +67,17 @@ python3 app.py
 lsof -ti:5001 | xargs kill -9
 
 ```
+
+## comandos
+
+```
+git switch PARCIAL
+git switch -c parcial-marina
+git add .
+git commit -m "Parcial: descripción corta de lo que hiciste"
+git push -u origin parcial-marina
+git status
+git log --oneline -3
+
+
+```

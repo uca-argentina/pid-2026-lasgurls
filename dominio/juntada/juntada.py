@@ -5,7 +5,7 @@ from dominio.ubicacion import Ubicacion
 
 
 class Juntada:
-    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True, recurrencia=None, ubicacion=""):
+    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True, recurrencia=None, ubicacion="",cupo=None):
         self.organizador = organizador
         self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
@@ -15,6 +15,7 @@ class Juntada:
         self.amigos_invitados = amigos_invitados
         self.visibilidad= visibilidad
         self.ubicacion=Ubicacion(ubicacion).texto
+        self.cupo=cupo
 
         self.validar_juntada()
         self.validar_amigos_invitados()
@@ -50,4 +51,5 @@ class Juntada:
             "hora_fin": self.hora_fin.isoformat(),
             "amigos_invitados": self.amigos_invitados,
             "visibilidad": self.visibilidad,
+            "cupo":self.cupo
         }

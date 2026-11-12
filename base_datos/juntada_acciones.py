@@ -29,6 +29,7 @@ def agregar_juntada(sesion, juntada):
             visibilidad=juntada.visibilidad,
             repeticion=repeticion,
             ubicacion=juntada.ubicacion or None,
+            cupo=juntada.cupo
         )
         sesion.add(juntada_tabla)
         filas.append(juntada_tabla)
@@ -71,6 +72,11 @@ def obtener_invitados_de_juntada(juntada_id):
         return sesion.scalars(consulta).all()
 
 def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la_serie=False):
+    invitados=obtener_invitados_de_juntada(juntada_id)
+    confirmados=sum(1 for _,estado,_ in invitados if estado=="Si")
+    
+    
+
     if nueva_respuesta not in ("Si", "No", "Tal vez"):
         return False
 
