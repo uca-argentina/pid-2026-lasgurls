@@ -61,3 +61,9 @@ python3 -m base_datos.preparar_local
 ```bash
 python3 app.py
 ```
+## limpiar
+
+```
+lsof -ti:5001 | xargs kill -9
+
+```
