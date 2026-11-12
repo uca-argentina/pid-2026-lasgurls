@@ -17,3 +17,4 @@ class JuntadaTabla(Base):
     serie_id = Column(Integer, nullable=True)
     repeticion = Column(String(20), nullable=True)
     ubicacion=Column(String(120),nullable=True)
+    cupo_maximo=Column(Integer,nullable=True)

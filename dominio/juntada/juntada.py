@@ -4,8 +4,9 @@ from dominio.modulo_utilidades.validador_de_tipo_evento import ValidadorDetipoEv
 from dominio.ubicacion import Ubicacion
 
 
+
 class Juntada:
-    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True, recurrencia=None, ubicacion=""):
+    def __init__(self, organizador, fecha, titulo_juntada, hora_inicio, hora_fin, amigos_invitados, ahora=None, categoria_id=None, visibilidad="ocupado", comparte_detalles=True, recurrencia=None, ubicacion="", cupo_maximo=None):
         self.organizador = organizador
         self.categoria_id = categoria_id
         self.fecha = parsear_fecha(fecha)
@@ -23,6 +24,9 @@ class Juntada:
 
         self.recurrencia = recurrencia
         self.fechas = recurrencia.fechas_desde(self.fecha) if recurrencia else [self.fecha]
+        
+        self.cupo_maximo=cupo_maximo
+        self.validar_cupo_maximo()
 
     def validar_juntada(self):
         ValidadorDetipoEvento().validar(
@@ -51,3 +55,8 @@ class Juntada:
             "amigos_invitados": self.amigos_invitados,
             "visibilidad": self.visibilidad,
         }
+    
+    def validar_cupo_maximo(self):
+        if  self.cupo_maximo<0:
+            raise ValueError("El cupo_maximo no puede ser menor que 0")
+        

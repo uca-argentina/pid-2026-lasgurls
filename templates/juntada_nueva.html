@@ -21,6 +21,11 @@
       <input type="text" id="titulo" name="titulo" placeholder="¿Qué van a hacer?" value="{{ request.form.get('titulo', '') }}" required data-mensaje="Ponele un título a la juntada.">
     </div>
 
+    <div class="campo">
+      <label for="titulo">Cupo Maximo de invitados</label>
+      <span type="text" id="cupo_maximo" name="cupo_maximo"  value="{{ request.form.get('cupo_maximo', '') }}" required data-mensaje="No podes superar el maximo de cupo"> </span>
+    </div>
+
     {% include "_elegir_lugar.html" %}
     {% include "_elegir_categoria.html" %}
     {% include "_elegir_visibilidad.html" %}

@@ -18,6 +18,7 @@ def agregar_juntada(sesion, juntada):
     """Agrega a la sesión las filas de la juntada (una por fecha) y sus invitaciones"""
     repeticion = juntada.recurrencia.frecuencia if juntada.recurrencia else None
     filas = []
+    invitados_que_confirmaron=[]
     for fecha in juntada.fechas:
         juntada_tabla = JuntadaTabla(
             organizador_id=juntada.organizador,
@@ -29,6 +30,7 @@ def agregar_juntada(sesion, juntada):
             visibilidad=juntada.visibilidad,
             repeticion=repeticion,
             ubicacion=juntada.ubicacion or None,
+            cupo_maximo=juntada.cupo_maximo or None
         )
         sesion.add(juntada_tabla)
         filas.append(juntada_tabla)
@@ -44,6 +46,8 @@ def agregar_juntada(sesion, juntada):
                 estado="Pendiente",
             ))
     return filas
+
+    
 
 
 def guardar(juntada):
@@ -85,8 +89,20 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la
             )
             .values(estado=nueva_respuesta)
         )
-
+        
         resultado = sesion.execute(consulta)
+        
+        lista_invitados=[]
+        for invitado in obtener_invitados_de_juntada(juntada_id):
+            if invitado.estado=="Si":
+                if invitado not in lista_invitados:
+                    lista_invitados.append(invitado)
+        
+        lista_confirmados=[]
+        if JuntadaTabla.cupo_maximo !=None and JuntadaTabla.cupo_maximo>0 :
+            cupo_maximo-=1
+            JuntadaTabla.cupo_maximo=cupo_maximo
+            
 
         if resultado.rowcount > 0:
             marcar_leidas_de_juntadas(sesion, usuario_id, juntadas_ids, "reprogramacion")
@@ -99,6 +115,10 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la
         if resultado.rowcount > 0 and nueva_respuesta == "No":
             _borrar_si_todos_rechazaron(sesion, juntadas_ids, ahora)
 
+       
+            
+            
+            
         sesion.commit()
 
         return resultado.rowcount > 0
@@ -201,6 +221,7 @@ def darse_de_baja(juntada_id, usuario_id, ahora):
         if resultado.rowcount == 1:
             texto = f"{nombre_de_usuario(sesion, usuario_id)} se bajó de {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
             notificar(sesion, [juntada.organizador_id], "baja", texto, ahora, juntada)
+            
             _borrar_si_todos_rechazaron(sesion, [juntada_id], ahora)
 
         sesion.commit()
@@ -279,4 +300,7 @@ def obtener_invitados_de_juntadas(juntadas_ids):
             .where(JuntadaInvitadosTabla.juntada_id.in_(juntadas_ids))
             .order_by(UsuarioTabla.nombre)
         )
+    
+    
+        
         return sesion.execute(consulta).all()

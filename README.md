@@ -233,3 +233,13 @@ git commit -m "Parcial: descripción corta de lo que hiciste"
 
 ## correr los tests:
 pytest -q
+
+git fetch --all --prune
+git branch -a
+
+git switch -c nombre-de-la-rama
+
+git switch nombre-de-la-rama
+git pull
+
+

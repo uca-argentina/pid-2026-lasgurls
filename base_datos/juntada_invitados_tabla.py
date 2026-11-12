@@ -9,3 +9,4 @@ class JuntadaInvitadosTabla(Base):
     juntada_id=Column(Integer, ForeignKey("juntadas.id"), nullable=False)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     estado=Column(String(20),nullable=False,default="Pendiente")
+    

@@ -412,7 +412,7 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "detalle":f"Te invitó {organizador} · {respuesta}"+texto_repeticion(juntada),
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(organizador,"organiza",juntada.organizador_id)]+invitados_por_juntada.get(juntada.id,[]),
-            "ubicacion":juntada.ubicacion,
+            "ubicacion":juntada.ubicacion, "cupo_maximo": juntada.cupo_maximo
         })
     agregar_estilos(eventos)
     return eventos
@@ -817,6 +817,7 @@ def crear_juntada():
             comparte_detalles=g.usuario.compartir_disponibilidad,
             recurrencia=recurrencia_del_formulario(datetime.strptime(fecha_parametro, "%Y-%m-%d").date()),
             ubicacion=request.form.get("ubicacion",""),
+            cupo_maximo=request.form.get("cupo_maximo","")
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
