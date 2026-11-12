@@ -382,6 +382,32 @@
     return tarjeta;
   }
 
+
+  function tarjetaDeCupo(lugar){
+    var tarjeta=crear("div","lugar");
+    var encabezado=crear("div","lugar-encabezado");
+    var textos=crear("span","lugar-textos");
+    var enlace=crear("a","lugar-abrir","Abrir en Google Maps");
+    enlace.href=lugar.mapa;
+    enlace.target="_blank";
+    enlace.rel="noopener";
+    textos.append(crear("strong","lugar-nombre",lugar.texto),enlace);
+    encabezado.append(iconoDeLugar(),textos);
+    if(!navigator.onLine){
+      enlace.hidden=true;
+      tarjeta.appendChild(encabezado);
+      return tarjeta;
+    }
+    var mapa=crear("iframe","lugar-mapa");
+    mapa.src=lugar.embebido;
+    mapa.title="Mapa de "+lugar.texto;
+    mapa.loading="lazy";
+    mapa.referrerPolicy="no-referrer-when-downgrade";
+    tarjeta.append(encabezado,mapa);
+    return tarjeta;
+  }
+
+
   function seccionDeComentarios(evento){
     var seccion=crear("div","detalle-personas detalle-comentarios");
     seccion.appendChild(crear("p","detalle-personas-titulo","Comentarios"));
@@ -736,6 +762,7 @@
       contenido.push(checkin);
     }
     if(evento.lugar)contenido.push(tarjetaDeLugar(evento.lugar));
+    if(evento.cupo)contenido.push(tarjetaDeCupo(evento.cupo));
     if (evento.personas.length) contenido.push(listaDePersonas(evento.personas));
     if(evento.cargarGasto)contenido.push(seccionDeGastos(evento),seccionDeSaldos(evento));
     if(evento.comentar)contenido.push(seccionDeComentarios(evento));

@@ -29,6 +29,7 @@ def agregar_juntada(sesion, juntada):
             visibilidad=juntada.visibilidad,
             repeticion=repeticion,
             ubicacion=juntada.ubicacion or None,
+            cupo=juntada.cupo or None
         )
         sesion.add(juntada_tabla)
         filas.append(juntada_tabla)
@@ -102,6 +103,23 @@ def responder_invitacion(juntada_id, usuario_id, nueva_respuesta, ahora, toda_la
         sesion.commit()
 
         return resultado.rowcount > 0
+
+def invitadosQueDIjeronQueSI(juntada_id,usuario_id,cupo,toda_la_serie=False):
+    with Session() as sesion:
+        juntadas_ids = _juntadas_de_la_serie(sesion, juntada_id) if toda_la_serie else [juntada_id]
+        consulta = (
+            
+            update(cupo)
+            .where(
+                (JuntadaInvitadosTabla.juntada_id.in_(juntadas_ids)) &
+                (JuntadaInvitadosTabla.usuario_id == usuario_id) &
+                (JuntadaInvitadosTabla.estado.in_(["Si"]))
+            )
+            .values(cupo=cupo-1)
+        )
+
+        resultado = sesion.execute(consulta)
+
 
 
 def _juntadas_de_la_serie(sesion, juntada_id):
@@ -200,6 +218,8 @@ def darse_de_baja(juntada_id, usuario_id, ahora):
 
         if resultado.rowcount == 1:
             texto = f"{nombre_de_usuario(sesion, usuario_id)} se bajó de {resaltar(juntada.titulo)} del {juntada.fecha:%d/%m}"
+            if(cupo>0):
+                cupo=cupo=1
             notificar(sesion, [juntada.organizador_id], "baja", texto, ahora, juntada)
             _borrar_si_todos_rechazaron(sesion, [juntada_id], ahora)
 

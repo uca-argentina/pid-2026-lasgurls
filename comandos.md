@@ -67,3 +67,10 @@ python3 app.py
 lsof -ti:5001 | xargs kill -9
 
 ```
+
+
+git switch PARCIAL
+git switch -c parcial-caro
+
+git status
+git branch --show-current

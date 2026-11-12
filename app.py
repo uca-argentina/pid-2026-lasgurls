@@ -396,6 +396,7 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "personas":[persona(g.usuario.nombre,"organiza",usuario_id,es_vos=True)]+[persona(nombre,estado,invitado_id) for nombre,estado,invitado_id in invitados],
             "ubicacion":juntada.ubicacion,
         })
+    
 
     invitaciones=[
         fila for fila in invitaciones_del_usuario(desde,hasta) if desde<=fila[1].fecha<=hasta
@@ -413,6 +414,7 @@ def eventos_del_usuario(usuario_id,desde,hasta):
             "juntada_id":juntada.id,"categoria":categoria,"color":color,
             "personas":[persona(organizador,"organiza",juntada.organizador_id)]+invitados_por_juntada.get(juntada.id,[]),
             "ubicacion":juntada.ubicacion,
+            "cupo":juntada.cupo,
         })
     agregar_estilos(eventos)
     return eventos
@@ -795,6 +797,7 @@ def crear_juntada():
     amigos=obtener_amigos(usuario_id)
     amigos_ids=[amigo.id for amigo in amigos]
     visibilidad = request.form.get("visibilidad", "ocupado")
+    cupo=request.form.get("cupo")
 
     if not set(invitados_ids).issubset(set(amigos_ids)):
         seleccionados=[id for id in invitados_ids if id in amigos_ids]
@@ -817,6 +820,7 @@ def crear_juntada():
             comparte_detalles=g.usuario.compartir_disponibilidad,
             recurrencia=recurrencia_del_formulario(datetime.strptime(fecha_parametro, "%Y-%m-%d").date()),
             ubicacion=request.form.get("ubicacion",""),
+            cupo=cupo
         )
     except ValueError as error:
         return formulario_juntada(amigos,fecha_parametro,invitados_ids,str(error)), 400
