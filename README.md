@@ -140,6 +140,13 @@ Si no existe `juntapp.db`, la app la crea vacía al arrancar (con las tablas y l
 ```bash
 source venv/bin/activate
 python3 -m base_datos.preparar_local
+
+```
+## En Windows (PowerShell):
+
+```powershell
+.\venv\Scripts\Activate.ps1
+python -m base_datos.preparar_local
 ```
 Borra y vuelve a crear `juntapp.db` con todas las tablas y datos de ejemplo:
 
@@ -216,3 +223,13 @@ Si existen las variables de entorno, la app las usa. Si no, lee `base_datos/cred
 | `main` | Versión publicada en Render. |
 | `develop` | Integración y pruebas antes de pasar a `main`. |
 | `S<n>/<funcionalidad>` | Una rama por funcionalidad, que se mergea con un pull request. |
+
+## cambiar de rama:
+git switch -c parcial-nombre
+
+## subir los cambios:
+git add .
+git commit -m "Parcial: descripción corta de lo que hiciste"
+
+## correr los tests:
+pytest -q
